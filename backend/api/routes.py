@@ -8,6 +8,67 @@ router = APIRouter(prefix="/api")
 class ChaosInjectRequest(BaseModel):
     scenario: str
 
+DEPENDENCIES = [
+    {"source": "cdn", "target": "api-gateway", "protocol": "HTTPS", "avgLatency": 5},
+    {"source": "api-gateway", "target": "auth-service", "protocol": "gRPC", "avgLatency": 15},
+    {"source": "api-gateway", "target": "order-service", "protocol": "gRPC", "avgLatency": 20},
+    {"source": "api-gateway", "target": "inventory-service", "protocol": "gRPC", "avgLatency": 18},
+    {"source": "order-service", "target": "payment-service", "protocol": "gRPC", "avgLatency": 30},
+    {"source": "order-service", "target": "postgres-db", "protocol": "TCP", "avgLatency": 8},
+    {"source": "order-service", "target": "notification-service", "protocol": "AMQP", "avgLatency": 10},
+    {"source": "inventory-service", "target": "postgres-db", "protocol": "TCP", "avgLatency": 8},
+    {"source": "payment-service", "target": "postgres-db", "protocol": "TCP", "avgLatency": 8}
+]
+
+def format_service_info(service: dict, time_series_store) -> dict:
+    svc_id = service["id"]
+    cur = service.get("current", {})
+    health = service.get("health", "healthy")
+    status_map = {"healthy": "healthy", "warning": "degraded", "critical": "critical"}
+    status = status_map.get(health, "healthy")
+
+    type_map = {
+        "cdn": "cdn",
+        "api-gateway": "gateway",
+        "auth-service": "auth",
+        "order-service": "order",
+        "payment-service": "payment",
+        "inventory-service": "inventory",
+        "notification-service": "notification",
+        "postgres-db": "database"
+    }
+
+    # Fetch recent sliding-window time series points
+    raw_hist = time_series_store.get_history(svc_id, last_seconds=30) if time_series_store else []
+    latency_hist = [{"timestamp": int(pt["timestamp"] * 1000), "value": round(pt.get("latency_p95", 10.0), 1)} for pt in raw_hist]
+    error_hist = [{"timestamp": int(pt["timestamp"] * 1000), "value": round(pt.get("error_rate", 0.0), 2)} for pt in raw_hist]
+    throughput_hist = [{"timestamp": int(pt["timestamp"] * 1000), "value": round(pt.get("rps", 100.0), 1)} for pt in raw_hist]
+    cpu_hist = [{"timestamp": int(pt["timestamp"] * 1000), "value": round(pt.get("cpu_pct", 20.0), 1)} for pt in raw_hist]
+
+    return {
+        "id": svc_id,
+        "name": service.get("name", svc_id),
+        "type": type_map.get(svc_id, "gateway"),
+        "status": status,
+        "health": health,
+        "metrics": {
+            "latency": round(cur.get("latency_p95", 10.0), 1),
+            "errorRate": round(cur.get("error_rate", 0.0), 2),
+            "throughput": round(cur.get("rps", 100.0), 1),
+            "cpu": round(cur.get("cpu_pct", 20.0), 1),
+            "memory": round(cur.get("memory_pct", 30.0), 1),
+            "connections": int(cur.get("rps", 100.0) * 0.5)
+        },
+        "metricsHistory": {
+            "latency": latency_hist[-20:] if latency_hist else [{"timestamp": int(time.time() * 1000), "value": round(cur.get("latency_p95", 10.0), 1)}],
+            "errorRate": error_hist[-20:] if error_hist else [{"timestamp": int(time.time() * 1000), "value": round(cur.get("error_rate", 0.0), 2)}],
+            "throughput": throughput_hist[-20:] if throughput_hist else [{"timestamp": int(time.time() * 1000), "value": round(cur.get("rps", 100.0), 1)}],
+            "cpu": cpu_hist[-20:] if cpu_hist else [{"timestamp": int(time.time() * 1000), "value": round(cur.get("cpu_pct", 20.0), 1)}]
+        },
+        "current": cur,
+        "baseline": service.get("baseline", {})
+    }
+
 @router.get("/health")
 async def health(request: Request):
     app_state = request.app.state
@@ -21,7 +82,8 @@ async def health(request: Request):
 @router.get("/services")
 async def get_services(request: Request):
     app_state = request.app.state
-    return app_state.digital_twin.get_services_snapshot()
+    raw_services = app_state.digital_twin.get_services_snapshot()
+    return [format_service_info(s, app_state.time_series_store) for s in raw_services]
 
 @router.get("/services/{service_id}/metrics")
 async def get_service_metrics(
@@ -40,7 +102,16 @@ async def get_service_metrics(
 @router.get("/graph")
 async def get_graph(request: Request):
     app_state = request.app.state
-    return app_state.graph_store.to_dict()
+    raw_services = app_state.digital_twin.get_services_snapshot()
+    formatted_services = [format_service_info(s, app_state.time_series_store) for s in raw_services]
+    graph_dict = app_state.graph_store.to_dict()
+
+    return {
+        "services": formatted_services,
+        "dependencies": DEPENDENCIES,
+        "nodes": graph_dict["nodes"],
+        "edges": graph_dict["edges"]
+    }
 
 @router.get("/spans")
 async def get_spans(request: Request, limit: int = Query(50, ge=1, le=200)):
@@ -84,6 +155,7 @@ async def inject_chaos(req: ChaosInjectRequest, request: Request):
         fault = app_state.digital_twin.inject_fault(req.scenario)
         return {
             "status": "injected",
+            "scenario": req.scenario,
             "fault": fault.model_dump()
         }
     except ValueError as e:

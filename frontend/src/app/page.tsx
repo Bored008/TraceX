@@ -19,6 +19,7 @@ export default function DashboardPage() {
     selectedService,
     activeScenario,
     systemStatus,
+    isBackendConnected,
     injectFault,
     resetServices,
     selectService,
@@ -30,6 +31,7 @@ export default function DashboardPage() {
       <Header
         systemStatus={systemStatus}
         incidentCount={rootCauseResult ? 1 : 0}
+        isBackendConnected={isBackendConnected}
       />
 
       {/* Main Container */}

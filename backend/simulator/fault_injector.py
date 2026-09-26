@@ -9,6 +9,7 @@ class FaultScenario(str, Enum):
     NETWORK_PARTITION = "network_partition"
     MEMORY_LEAK = "memory_leak"
     CDN_SPIKE = "cdn_spike"
+    CDN_LATENCY = "cdn_latency"
 
 class FaultState(BaseModel):
     scenario: FaultScenario
@@ -43,6 +44,11 @@ class FaultInjector:
                 "description": "Unbounded cache growth causes memory to climb to 95%, triggering severe Stop-The-World garbage collection pauses."
             },
             FaultScenario.CDN_SPIKE: {
+                "name": "CDN Latency Spike",
+                "target": "cdn",
+                "description": "Edge routing degradation spikes CDN latency to 800ms, slowing all inbound ingress to API Gateway."
+            },
+            FaultScenario.CDN_LATENCY: {
                 "name": "CDN Latency Spike",
                 "target": "cdn",
                 "description": "Edge routing degradation spikes CDN latency to 800ms, slowing all inbound ingress to API Gateway."
@@ -163,7 +169,7 @@ class FaultInjector:
                     metrics["error_rate"] += 5.0 * factor
 
             # Scenario 5: CDN Latency Spike
-            elif fault.scenario == FaultScenario.CDN_SPIKE:
+            elif fault.scenario in [FaultScenario.CDN_SPIKE, FaultScenario.CDN_LATENCY]:
                 if service_id == "cdn":
                     factor = min(1.0, t / 3.0)
                     metrics["latency_p50"] += 600.0 * factor

@@ -19,7 +19,7 @@ from .analysis.rca_engine import MicroRCAEngine, RCAResult
 from .analysis.propagation_tracer import PropagationTracer
 from .analysis.impact_analyzer import ImpactAnalyzer
 from .analysis.explainer import GeminiExplainer
-from .api.routes import router
+from .api.routes import router, format_service_info
 from .api.websocket import (
     sio,
     broadcast_metrics_update,
@@ -109,14 +109,52 @@ async def simulation_and_analysis_worker(app: FastAPI):
                     # Generate AI explanation (Gemini or template fallback)
                     explanation = explainer.explain(rca_res, propagation, impact)
 
+                    frontend_prop_path = []
+                    for i in range(len(propagation.steps) - 1):
+                        s_curr = propagation.steps[i]
+                        s_next = propagation.steps[i + 1]
+                        frontend_prop_path.append({
+                            "from": s_curr.service_id,
+                            "to": s_next.service_id,
+                            "delay": int(s_next.delay_seconds * 1000),
+                            "mechanism": s_next.description
+                        })
+                    if not frontend_prop_path and propagation.steps:
+                        s_curr = propagation.steps[0]
+                        frontend_prop_path.append({
+                            "from": s_curr.service_id,
+                            "to": s_curr.service_id,
+                            "delay": 0,
+                            "mechanism": s_curr.description
+                        })
+
+                    rc_name = SERVICE_DEFINITIONS.get(rca_res.root_cause_service, {}).get("name", rca_res.root_cause_service)
+
                     incident_payload = {
                         "id": f"inc-{int(loop_start)}-{rca_res.root_cause_service}",
-                        "timestamp": loop_start,
+                        "timestamp": int(loop_start * 1000),
+                        "rootCause": {
+                            "serviceId": rca_res.root_cause_service,
+                            "serviceName": rc_name,
+                            "metric": rca_res.primary_metric,
+                            "description": rca_res.summary,
+                            "timestamp": int(rca_res.timestamp * 1000),
+                            "value": rca_res.anomaly_value,
+                            "baseline": rca_res.baseline_value
+                        },
+                        "propagationPath": frontend_prop_path,
+                        "affectedServices": rca_res.affected_services,
+                        "affectedUsers": impact.estimated_affected_users,
+                        "confidence": round(rca_res.confidence, 1),
+                        "explanation": explanation.summary,
+                        "aiExplanation": explanation.causal_chain,
+                        "suggestedFix": explanation.suggested_fix,
+                        "severity": impact.severity_level,
                         "status": "active",
                         "root_cause": rca_res.model_dump(),
                         "propagation": propagation.model_dump(),
                         "impact": impact.model_dump(),
-                        "explanation": explanation.model_dump()
+                        "explanation_details": explanation.model_dump()
                     }
 
                     # Rate-limit incident emission to avoid duplicate spam within 3 seconds
@@ -130,9 +168,11 @@ async def simulation_and_analysis_worker(app: FastAPI):
                         await broadcast_rca(incident_payload)
 
             # 5. Broadcast real-time metrics update to dashboard
+            formatted_services = [format_service_info(s, ts) for s in dt.get_services_snapshot()]
             await broadcast_metrics_update({
                 "timestamp": batch.timestamp,
-                "services": batch.service_metrics
+                "services": formatted_services,
+                "raw_metrics": batch.service_metrics
             })
 
             # Sleep remaining interval to maintain 1-second cadence

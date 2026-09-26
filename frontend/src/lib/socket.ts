@@ -1,0 +1,18 @@
+import { io, Socket } from 'socket.io-client';
+import { WS_URL } from './constants';
+
+let socket: Socket | null = null;
+
+export function getSocket(): Socket {
+  if (!socket) {
+    socket = io(WS_URL, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      autoConnect: false,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+    });
+  }
+  return socket;
+}
