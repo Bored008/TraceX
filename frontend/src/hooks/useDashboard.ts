@@ -111,14 +111,22 @@ export function useDashboard() {
             (s) => s.status === 'degraded' || s.status === 'critical' || s.status === 'down'
           );
 
-          // If no services are degraded or critical, clear any stale incident / RCA state
           if (!hasUnhealthyService && (prev.systemStatus === 'incident' || prev.rootCauseResult !== null)) {
+            const recoveryEvent: TimelineEvent = {
+              id: `recovery-${Date.now()}`,
+              timestamp: Date.now(),
+              type: 'recovery',
+              title: 'System Recovered & Baseline Restored',
+              description: 'All 8 microservices returned to healthy operating baseline. SLA normal.',
+            };
+
             return {
               ...prev,
               services: data.services,
               rootCauseResult: null,
               activeScenario: null,
               systemStatus: 'healthy',
+              timelineEvents: [...prev.timelineEvents.slice(-40), recoveryEvent],
             };
           }
 
@@ -216,12 +224,23 @@ export function useDashboard() {
     };
 
     const onChaosReset = () => {
-      setState((prev) => ({
-        ...prev,
-        rootCauseResult: null,
-        activeScenario: null,
-        systemStatus: 'healthy',
-      }));
+      setState((prev) => {
+        const recoveryEvent: TimelineEvent = {
+          id: `recovery-${Date.now()}`,
+          timestamp: Date.now(),
+          type: 'recovery',
+          title: 'System Reset / Baseline Restored',
+          description: 'All chaos cleared. Normal microservice operation restored.',
+        };
+
+        return {
+          ...prev,
+          rootCauseResult: null,
+          activeScenario: null,
+          systemStatus: 'healthy',
+          timelineEvents: [...prev.timelineEvents.slice(-40), recoveryEvent],
+        };
+      });
     };
 
     socket.on('connect', onConnect);

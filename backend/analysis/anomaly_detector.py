@@ -33,7 +33,22 @@ class AnomalyDetector:
         self.is_trained: Dict[str, bool] = {}
         self.feature_names = ["latency_p50", "latency_p95", "error_rate", "rps", "cpu_pct"]
 
-    def _determine_severity(self, abs_z: float) -> AnomalySeverity:
+    def _determine_severity(self, abs_z: float, metric_name: str = "", value: float = 0.0) -> AnomalySeverity:
+        if metric_name == "error_rate":
+            if value >= 40.0:
+                return AnomalySeverity.CRITICAL
+            elif value >= 10.0:
+                return AnomalySeverity.HIGH
+            elif value >= 2.0:
+                return AnomalySeverity.MEDIUM
+        elif "latency" in metric_name:
+            if value >= 2000.0:
+                return AnomalySeverity.CRITICAL
+            elif value >= 500.0:
+                return AnomalySeverity.HIGH
+            elif value >= 200.0:
+                return AnomalySeverity.MEDIUM
+
         if abs_z >= 5.0:
             return AnomalySeverity.CRITICAL
         elif abs_z >= 4.0:
@@ -66,7 +81,7 @@ class AnomalyDetector:
                 z = (val - base_val) / std_est
 
             if z >= settings.Z_LATENCY_THRESHOLD or (base_val > 0 and val >= base_val * 2.5 and val > 50.0):
-                severity = self._determine_severity(z)
+                severity = self._determine_severity(z, metric, val)
                 anomalies.append(AnomalyEvent(
                     id=f"{service_id}-{metric}-{int(timestamp)}",
                     service_id=service_id,
@@ -91,7 +106,7 @@ class AnomalyDetector:
             z_err = (err_val - base_err) / std_err_est
 
         if (z_err >= settings.Z_ERROR_THRESHOLD and err_val > 0.5) or (err_val >= base_err * settings.ERROR_MULTIPLIER_THRESHOLD and err_val > 1.0):
-            severity = self._determine_severity(z_err)
+            severity = self._determine_severity(z_err, "error_rate", err_val)
             anomalies.append(AnomalyEvent(
                 id=f"{service_id}-error_rate-{int(timestamp)}",
                 service_id=service_id,
@@ -115,7 +130,7 @@ class AnomalyDetector:
             z_rps = (rps_val - base_rps) / max(5.0, base_rps * 0.15)
 
         if z_rps <= settings.Z_RPS_THRESHOLD and rps_val < base_rps * 0.5:
-            severity = self._determine_severity(abs(z_rps))
+            severity = self._determine_severity(abs(z_rps), "rps", rps_val)
             anomalies.append(AnomalyEvent(
                 id=f"{service_id}-rps-{int(timestamp)}",
                 service_id=service_id,
