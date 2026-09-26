@@ -1,0 +1,246 @@
+'use client';
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  ServiceInfo,
+  RootCauseResult,
+  TimelineEvent,
+  ChaosScenario,
+} from '@/types';
+import {
+  generateInitialServices,
+  tickServices,
+  simulateFault,
+} from '@/lib/mock-data';
+import { api } from '@/lib/api';
+
+// Whether to use mock data or connect to backend
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== 'false';
+
+interface DashboardState {
+  services: ServiceInfo[];
+  rootCauseResult: RootCauseResult | null;
+  timelineEvents: TimelineEvent[];
+  selectedServiceId: string | null;
+  isBackendConnected: boolean;
+  activeScenario: ChaosScenario | null;
+  systemStatus: 'healthy' | 'incident';
+}
+
+export function useDashboard() {
+  const [state, setState] = useState<DashboardState>({
+    services: [],
+    rootCauseResult: null,
+    timelineEvents: [],
+    selectedServiceId: null,
+    isBackendConnected: false,
+    activeScenario: null,
+    systemStatus: 'healthy',
+  });
+
+  const faultTimersRef = useRef<NodeJS.Timeout[]>([]);
+
+  // Initialize services
+  useEffect(() => {
+    if (USE_MOCK) {
+      const initialServices = generateInitialServices();
+      setState((prev) => ({
+        ...prev,
+        services: initialServices,
+        timelineEvents: [
+          {
+            id: 'init',
+            timestamp: Date.now(),
+            type: 'info',
+            title: 'System Initialized',
+            description: 'All 8 services are healthy and operational',
+          },
+        ],
+      }));
+    } else {
+      // Try connecting to backend
+      api
+        .healthCheck()
+        .then(() => {
+          setState((prev) => ({ ...prev, isBackendConnected: true }));
+          return api.getServiceGraph();
+        })
+        .then((graph) => {
+          setState((prev) => ({ ...prev, services: graph.services }));
+        })
+        .catch(() => {
+          // Fallback to mock
+          const initialServices = generateInitialServices();
+          setState((prev) => ({
+            ...prev,
+            services: initialServices,
+            timelineEvents: [
+              {
+                id: 'init',
+                timestamp: Date.now(),
+                type: 'info',
+                title: 'Demo Mode',
+                description:
+                  'Backend not connected. Running with simulated data.',
+              },
+            ],
+          }));
+        });
+    }
+  }, []);
+
+  // Tick metrics every second
+  useEffect(() => {
+    if (state.services.length === 0) return;
+
+    const interval = setInterval(() => {
+      setState((prev) => ({
+        ...prev,
+        services: tickServices(prev.services),
+      }));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [state.services.length]);
+
+  // Inject fault
+  const injectFault = useCallback(
+    (scenario: ChaosScenario) => {
+      if (state.activeScenario) return;
+
+      const fault = simulateFault(scenario);
+
+      setState((prev) => ({
+        ...prev,
+        activeScenario: scenario,
+        systemStatus: 'incident',
+      }));
+
+      // Clear any existing timers
+      faultTimersRef.current.forEach(clearTimeout);
+      faultTimersRef.current = [];
+
+      // Add the initial chaos event immediately
+      const chaosEvent = fault.timeline[0];
+      if (chaosEvent) {
+        setState((prev) => ({
+          ...prev,
+          timelineEvents: [...prev.timelineEvents, chaosEvent],
+        }));
+      }
+
+      // Schedule service degradation based on delays
+      fault.affectedServices.forEach((effect, serviceId) => {
+        const timer = setTimeout(() => {
+          setState((prev) => {
+            const updatedServices = prev.services.map((s) => {
+              if (s.id === serviceId) {
+                return {
+                  ...s,
+                  status: effect.status,
+                  metrics: {
+                    ...s.metrics,
+                    ...effect.metrics,
+                  },
+                };
+              }
+              return s;
+            });
+
+            // Find the matching timeline event for this service
+            const matchingEvent = fault.timeline.find(
+              (e) =>
+                e.serviceId === serviceId &&
+                e.type === 'anomaly'
+            );
+
+            return {
+              ...prev,
+              services: updatedServices,
+              timelineEvents: matchingEvent
+                ? [
+                    ...prev.timelineEvents,
+                    { ...matchingEvent, timestamp: Date.now() },
+                  ]
+                : prev.timelineEvents,
+            };
+          });
+        }, effect.delay);
+
+        faultTimersRef.current.push(timer);
+      });
+
+      // Schedule RCA result after all services are affected
+      const maxDelay = Math.max(
+        ...Array.from(fault.affectedServices.values()).map((e) => e.delay)
+      );
+      const rcaTimer = setTimeout(() => {
+        const rcaEvent = fault.timeline.find((e) => e.type === 'rca');
+        setState((prev) => ({
+          ...prev,
+          rootCauseResult: {
+            ...fault.rcaResult,
+            timestamp: Date.now(),
+          },
+          timelineEvents: rcaEvent
+            ? [
+                ...prev.timelineEvents,
+                { ...rcaEvent, timestamp: Date.now() },
+              ]
+            : prev.timelineEvents,
+        }));
+      }, maxDelay + 2000);
+
+      faultTimersRef.current.push(rcaTimer);
+    },
+    [state.activeScenario]
+  );
+
+  // Reset all services
+  const resetServices = useCallback(() => {
+    faultTimersRef.current.forEach(clearTimeout);
+    faultTimersRef.current = [];
+
+    const freshServices = generateInitialServices();
+
+    setState((prev) => ({
+      ...prev,
+      services: freshServices,
+      rootCauseResult: null,
+      activeScenario: null,
+      systemStatus: 'healthy',
+      timelineEvents: [
+        ...prev.timelineEvents,
+        {
+          id: `reset-${Date.now()}`,
+          timestamp: Date.now(),
+          type: 'recovery',
+          title: 'System Reset',
+          description: 'All services restored to healthy state',
+        },
+      ],
+    }));
+  }, []);
+
+  // Select a service
+  const selectService = useCallback((serviceId: string | null) => {
+    setState((prev) => ({ ...prev, selectedServiceId: serviceId }));
+  }, []);
+
+  const selectedService =
+    state.services.find((s) => s.id === state.selectedServiceId) || null;
+
+  return {
+    services: state.services,
+    rootCauseResult: state.rootCauseResult,
+    timelineEvents: state.timelineEvents,
+    selectedService,
+    selectedServiceId: state.selectedServiceId,
+    isBackendConnected: state.isBackendConnected,
+    activeScenario: state.activeScenario,
+    systemStatus: state.systemStatus,
+    injectFault,
+    resetServices,
+    selectService,
+  };
+}
