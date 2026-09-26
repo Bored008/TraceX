@@ -50,28 +50,33 @@ export default function IncidentTimeline({ events }: IncidentTimelineProps) {
       className="bg-slate-950/40 rounded-xl border border-slate-800/60 p-4 max-h-[340px] overflow-y-auto"
     >
       <div className="relative border-l border-slate-800 ml-3 space-y-5 pb-2 mt-1">
-        {events.map((event, index) => (
-          <div key={event.id || index} className="relative pl-6">
-            <div className={`absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-slate-900 ${getColor(event.type)}`} />
-            
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-mono text-slate-400" suppressHydrationWarning>
-                {new Date(event.timestamp).toLocaleTimeString([], { hour12: false })}
-              </span>
-              {event.severity && (
-                <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${getSeverityBadgeClass(event.severity)}`}>
-                  {event.severity}
+        {events.map((event, index) => {
+          // Guaranteed unique composite key to prevent React duplicate key warnings
+          const itemKey = `${event.id || 'evt'}-${index}-${event.timestamp || Date.now()}`;
+
+          return (
+            <div key={itemKey} className="relative pl-6">
+              <div className={`absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-slate-900 ${getColor(event.type)}`} />
+              
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-mono text-slate-400" suppressHydrationWarning>
+                  {new Date(event.timestamp).toLocaleTimeString([], { hour12: false })}
                 </span>
+                {event.severity && (
+                  <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${getSeverityBadgeClass(event.severity)}`}>
+                    {event.severity}
+                  </span>
+                )}
+              </div>
+              
+              <h4 className="text-xs font-semibold text-slate-200">{event.title}</h4>
+              
+              {event.description && (
+                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{event.description}</p>
               )}
             </div>
-            
-            <h4 className="text-xs font-semibold text-slate-200">{event.title}</h4>
-            
-            {event.description && (
-              <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{event.description}</p>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

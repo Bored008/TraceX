@@ -12,7 +12,6 @@ import {
   type Edge,
   type NodeTypes,
 } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
 
 import ServiceNode, { type ServiceNodeData } from './ServiceNode';
 import { getLayoutedElements } from './graph-layout';
@@ -25,7 +24,6 @@ interface DependencyGraphProps {
   affectedServiceIds?: string[];
 }
 
-// Important: Must be defined outside the component to avoid re-creating on every render
 const nodeTypes: NodeTypes = {
   service: ServiceNode,
 };
@@ -46,6 +44,8 @@ export default function DependencyGraph({
         id,
         type: 'service',
         position: { x: 0, y: 0 },
+        width: 220,
+        height: 160,
         data: {
           serviceId: id,
           name: config.name,
@@ -95,17 +95,21 @@ export default function DependencyGraph({
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
+        defaultViewport={{ x: 60, y: 20, zoom: 0.45 }}
+        onInit={(instance) => {
+          setTimeout(() => {
+            instance.fitView({ padding: 0.15, duration: 400 });
+          }, 50);
+        }}
         className="bg-slate-950"
-        minZoom={0.2}
+        minZoom={0.1}
         maxZoom={1.5}
-        nodesDraggable={false}
+        nodesDraggable={true}
         nodesConnectable={false}
         elementsSelectable={false}
       >
-        <Background variant={BackgroundVariant.Dots} gap={24} size={2} color="#334155" />
-        <Controls className="bg-slate-900 border-slate-800 fill-slate-300" showInteractive={false} />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#334155" />
+        <Controls className="bg-slate-900 border-slate-800 fill-slate-300" />
         <MiniMap 
           nodeColor={(node) => {
             const data = node.data as { status?: string } | undefined;
@@ -115,12 +119,12 @@ export default function DependencyGraph({
             if (status === 'down') return '#881337';
             return '#10b981';
           }}
-          maskColor="rgba(2, 6, 23, 0.7)"
+          maskColor="rgba(2, 6, 23, 0.75)"
           className="bg-slate-900 border-slate-800"
         />
-        <Panel position="top-right" className="bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 backdrop-blur shadow-xl">
+        <Panel position="top-right" className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 backdrop-blur shadow-xl">
           <h4 className="text-slate-200 font-semibold mb-2 text-xs uppercase tracking-wider">Legend</h4>
-          <div className="flex flex-col gap-2 text-xs text-slate-400">
+          <div className="flex flex-col gap-1.5 text-xs text-slate-400">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
               <span>Healthy</span>

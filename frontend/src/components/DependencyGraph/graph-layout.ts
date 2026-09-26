@@ -3,7 +3,7 @@ import { Node, Edge } from '@xyflow/react';
 
 export function getLayoutedElements(nodes: Node[], edges: Edge[]): { nodes: Node[]; edges: Edge[] } {
   const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: 'TB', nodesep: 80, ranksep: 120 });
+  g.setGraph({ rankdir: 'TB', nodesep: 50, ranksep: 80 });
 
   edges.forEach((edge) => g.setEdge(edge.source, edge.target));
   nodes.forEach((node) => {
@@ -13,16 +13,30 @@ export function getLayoutedElements(nodes: Node[], edges: Edge[]): { nodes: Node
 
   Dagre.layout(g);
 
+  // Find minX and minY to normalize coordinate origin cleanly
+  let minX = Infinity;
+  let minY = Infinity;
+  nodes.forEach((node) => {
+    const pos = g.node(node.id);
+    if (pos) {
+      minX = Math.min(minX, pos.x - 110);
+      minY = Math.min(minY, pos.y - 80);
+    }
+  });
+
+  if (!isFinite(minX)) minX = 0;
+  if (!isFinite(minY)) minY = 0;
+
   return {
     nodes: nodes.map((node) => {
       const position = g.node(node.id);
-      // We are shifting the dagre node position (anchor=center center) to the top left
-      // so it matches the React Flow node anchor point (top left).
       return {
         ...node,
+        width: 220,
+        height: 160,
         position: {
-          x: position.x - 110,
-          y: position.y - 80,
+          x: Math.round(position.x - 110 - minX + 40),
+          y: Math.round(position.y - 80 - minY + 40),
         },
       };
     }),

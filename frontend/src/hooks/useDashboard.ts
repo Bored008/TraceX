@@ -158,8 +158,9 @@ export function useDashboard() {
         severity: incident.severity || 'CRITICAL',
       };
 
+      const eventId = `rca-event-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       const timelineEvent: TimelineEvent = {
-        id: `rca-event-${Date.now()}`,
+        id: eventId,
         timestamp: Date.now(),
         type: 'rca',
         serviceId: rcaResult.rootCause.serviceId,
@@ -168,12 +169,25 @@ export function useDashboard() {
         severity: rcaResult.severity,
       };
 
-      setState((prev) => ({
-        ...prev,
-        rootCauseResult: rcaResult,
-        systemStatus: 'incident',
-        timelineEvents: [...prev.timelineEvents.slice(-40), timelineEvent],
-      }));
+      setState((prev) => {
+        // Prevent duplicate RCA events within 5 seconds for the same service
+        const isDuplicate = prev.timelineEvents.some(
+          (e) => e.type === 'rca' && e.serviceId === rcaResult.rootCause.serviceId && (Date.now() - e.timestamp) < 5000
+        );
+        if (isDuplicate) {
+          return {
+            ...prev,
+            rootCauseResult: rcaResult,
+            systemStatus: 'incident',
+          };
+        }
+        return {
+          ...prev,
+          rootCauseResult: rcaResult,
+          systemStatus: 'incident',
+          timelineEvents: [...prev.timelineEvents.slice(-40), timelineEvent],
+        };
+      });
     };
 
     const onChaosInjected = (data: { scenario: ChaosScenario; target?: string }) => {
