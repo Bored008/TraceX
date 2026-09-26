@@ -167,3 +167,71 @@ async def reset_chaos(request: Request):
     app_state.digital_twin.reset()
     app_state.recent_anomalies.clear()
     return {"status": "reset", "message": "All faults cleared and services reset to baseline"}
+
+class OrderItemPayload(BaseModel):
+    id: str
+    quantity: int
+    price: float
+
+class OrderCheckoutRequest(BaseModel):
+    items: List[OrderItemPayload]
+    customerName: str = "Alex Mercer"
+    deliveryAddress: str = "742 Evergreen Terrace"
+    paymentMethod: str = "credit_card"
+    simulateFaultScenario: Optional[str] = None
+    traceId: Optional[str] = None
+
+@router.post("/order/checkout")
+async def checkout_order(req: OrderCheckoutRequest, request: Request):
+    app_state = request.app.state
+    trace_id = req.traceId or f"tr-{int(time.time() * 1000)}"
+    order_id = f"TB-{int(time.time() % 1000000)}"
+
+    # If the user explicitly requested a simulated fault from the UI, trigger it!
+    if req.simulateFaultScenario:
+        try:
+            app_state.digital_twin.inject_fault(req.simulateFaultScenario)
+        except Exception:
+            pass
+
+    # Check active faults in digital twin
+    active_faults = app_state.digital_twin.fault_injector.get_active_faults()
+
+    if active_faults:
+        primary_fault = active_faults[0]
+        failed_service = primary_fault.target_service
+        
+        scenario_messages = {
+            "db_overload": ("postgres-db", 504, "Connection Pool Timeout", "Database pool saturated; transaction rolled back."),
+            "payment_crash": ("payment-service", 502, "Bad Gateway", "Payment gateway unresponsive."),
+            "auth_crash": ("auth-service", 401, "Authentication Service Failure", "User authorization token validation failed."),
+            "cdn_latency": ("cdn", 504, "Gateway Timeout", "Asset caching layer exceeded SLA threshold."),
+            "memory_leak": ("inventory-service", 503, "Service Unavailable", "Out of memory error in inventory verification.")
+        }
+
+        fault_info = scenario_messages.get(
+            primary_fault.scenario,
+            (failed_service, 500, "Internal Dependency Error", f"Failure detected at microservice {failed_service}")
+        )
+
+        return {
+            "status": "failed",
+            "orderId": order_id,
+            "traceId": trace_id,
+            "failedService": fault_info[0],
+            "statusCode": fault_info[1],
+            "errorType": fault_info[2],
+            "userMessage": "Your order could not be completed due to a temporary system issue. No funds have been deducted.",
+            "technicalMessage": fault_info[3]
+        }
+
+    # Healthy path
+    total_amount = sum(item.price * item.quantity for item in req.items)
+    return {
+        "status": "confirmed",
+        "orderId": order_id,
+        "traceId": trace_id,
+        "totalAmount": round(total_amount, 2),
+        "deliveryMinutes": 24,
+        "message": "Order confirmed and dispatched to kitchen."
+    }
