@@ -1,14 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   ReactFlow,
   Controls,
   Background,
   BackgroundVariant,
   MiniMap,
-  useNodesState,
-  useEdgesState,
   Panel,
   type Node,
   type Edge,
@@ -16,7 +14,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import ServiceNode from './ServiceNode';
+import ServiceNode, { type ServiceNodeData } from './ServiceNode';
 import { getLayoutedElements } from './graph-layout';
 import { ServiceInfo } from '@/types';
 import { SERVICE_CONFIG, SERVICE_DEPENDENCIES } from '@/lib/constants';
@@ -27,6 +25,7 @@ interface DependencyGraphProps {
   affectedServiceIds?: string[];
 }
 
+// Important: Must be defined outside the component to avoid re-creating on every render
 const nodeTypes: NodeTypes = {
   service: ServiceNode,
 };
@@ -36,14 +35,10 @@ export default function DependencyGraph({
   rootCauseServiceId, 
   affectedServiceIds = [] 
 }: DependencyGraphProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [isLayouted, setIsLayouted] = useState(false);
-
-  useEffect(() => {
-    // Generate initial nodes from SERVICE_CONFIG and provided services data
-    const initialNodes: Node[] = Object.entries(SERVICE_CONFIG).map(([id, config]) => {
-      const serviceData = services.find(s => s.id === id);
+  // Compute DAG positions and node/edge data synchronously with useMemo
+  const { nodes, edges } = useMemo(() => {
+    const rawNodes: Node<ServiceNodeData>[] = Object.entries(SERVICE_CONFIG).map(([id, config]) => {
+      const serviceData = services.find((s) => s.id === id);
       const isRootCause = id === rootCauseServiceId;
       const isAffected = affectedServiceIds.includes(id);
 
@@ -57,10 +52,10 @@ export default function DependencyGraph({
           icon: config.icon,
           status: serviceData?.status || 'healthy',
           metrics: serviceData?.metrics || {
-            latency: Math.floor(Math.random() * 50) + 10,
-            errorRate: Math.random() * 0.5,
-            throughput: Math.floor(Math.random() * 1000) + 100,
-            cpu: Math.floor(Math.random() * 30) + 10,
+            latency: 10,
+            errorRate: 0.01,
+            throughput: 100,
+            cpu: 10,
           },
           isRootCause,
           isAffected,
@@ -68,9 +63,9 @@ export default function DependencyGraph({
       };
     });
 
-    const initialEdges: Edge[] = SERVICE_DEPENDENCIES.map((dep) => {
-      const sourceServiceData = services.find(s => s.id === dep.source);
-      const targetServiceData = services.find(s => s.id === dep.target);
+    const rawEdges: Edge[] = SERVICE_DEPENDENCIES.map((dep) => {
+      const sourceServiceData = services.find((s) => s.id === dep.source);
+      const targetServiceData = services.find((s) => s.id === dep.target);
       
       let edgeStatus: 'healthy' | 'degraded' | 'critical' = 'healthy';
       if (sourceServiceData?.status === 'critical' || targetServiceData?.status === 'critical') {
@@ -91,42 +86,26 @@ export default function DependencyGraph({
       };
     });
 
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-      initialNodes,
-      initialEdges
-    );
-
-    setNodes(layoutedNodes);
-    setEdges(layoutedEdges);
-    setIsLayouted(true);
-  }, [services, rootCauseServiceId, affectedServiceIds, setNodes, setEdges]);
-
-  if (!isLayouted) {
-    return (
-      <div className="w-full h-full bg-slate-950 flex items-center justify-center text-slate-400">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
-          <span>Computing Topology Layout...</span>
-        </div>
-      </div>
-    );
-  }
+    return getLayoutedElements(rawNodes, rawEdges);
+  }, [services, rootCauseServiceId, affectedServiceIds]);
 
   return (
     <div className="w-full h-full bg-slate-950">
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         fitView
+        fitViewOptions={{ padding: 0.2 }}
         className="bg-slate-950"
         minZoom={0.2}
-        maxZoom={2}
+        maxZoom={1.5}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable={false}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={2} color="#334155" />
-        <Controls className="bg-slate-900 border-slate-800 fill-slate-300" />
+        <Controls className="bg-slate-900 border-slate-800 fill-slate-300" showInteractive={false} />
         <MiniMap 
           nodeColor={(node) => {
             const data = node.data as { status?: string } | undefined;
