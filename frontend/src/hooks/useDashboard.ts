@@ -28,26 +28,11 @@ interface DashboardState {
 }
 
 export function useDashboard() {
-  const [state, setState] = useState<DashboardState>({
-    services: [],
+  const [state, setState] = useState<DashboardState>(() => ({
+    services: USE_MOCK ? generateInitialServices() : [],
     rootCauseResult: null,
-    timelineEvents: [],
-    selectedServiceId: null,
-    isBackendConnected: false,
-    activeScenario: null,
-    systemStatus: 'healthy',
-  });
-
-  const faultTimersRef = useRef<NodeJS.Timeout[]>([]);
-
-  // Initialize services
-  useEffect(() => {
-    if (USE_MOCK) {
-      const initialServices = generateInitialServices();
-      setState((prev) => ({
-        ...prev,
-        services: initialServices,
-        timelineEvents: [
+    timelineEvents: USE_MOCK
+      ? [
           {
             id: 'init',
             timestamp: Date.now(),
@@ -55,10 +40,19 @@ export function useDashboard() {
             title: 'System Initialized',
             description: 'All 8 services are healthy and operational',
           },
-        ],
-      }));
-    } else {
-      // Try connecting to backend
+        ]
+      : [],
+    selectedServiceId: null,
+    isBackendConnected: false,
+    activeScenario: null,
+    systemStatus: 'healthy',
+  }));
+
+  const faultTimersRef = useRef<NodeJS.Timeout[]>([]);
+
+  // Initialize backend connection if not in mock mode
+  useEffect(() => {
+    if (!USE_MOCK) {
       api
         .healthCheck()
         .then(() => {
@@ -69,7 +63,6 @@ export function useDashboard() {
           setState((prev) => ({ ...prev, services: graph.services }));
         })
         .catch(() => {
-          // Fallback to mock
           const initialServices = generateInitialServices();
           setState((prev) => ({
             ...prev,

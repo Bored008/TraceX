@@ -1,14 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   ReactFlow,
   Controls,
   Background,
   BackgroundVariant,
   MiniMap,
-  useNodesState,
-  useEdgesState,
   Panel,
   type Node,
   type Edge,
@@ -36,14 +34,10 @@ export default function DependencyGraph({
   rootCauseServiceId, 
   affectedServiceIds = [] 
 }: DependencyGraphProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [isLayouted, setIsLayouted] = useState(false);
-
-  useEffect(() => {
-    // Generate initial nodes from SERVICE_CONFIG and provided services data
+  const { nodes, edges } = useMemo(() => {
+    // Generate nodes from SERVICE_CONFIG and provided services data
     const initialNodes: Node[] = Object.entries(SERVICE_CONFIG).map(([id, config]) => {
-      const serviceData = services.find(s => s.id === id);
+      const serviceData = services.find((s) => s.id === id);
       const isRootCause = id === rootCauseServiceId;
       const isAffected = affectedServiceIds.includes(id);
 
@@ -57,10 +51,10 @@ export default function DependencyGraph({
           icon: config.icon,
           status: serviceData?.status || 'healthy',
           metrics: serviceData?.metrics || {
-            latency: Math.floor(Math.random() * 50) + 10,
-            errorRate: Math.random() * 0.5,
-            throughput: Math.floor(Math.random() * 1000) + 100,
-            cpu: Math.floor(Math.random() * 30) + 10,
+            latency: 10,
+            errorRate: 0.01,
+            throughput: 100,
+            cpu: 10,
           },
           isRootCause,
           isAffected,
@@ -69,8 +63,8 @@ export default function DependencyGraph({
     });
 
     const initialEdges: Edge[] = SERVICE_DEPENDENCIES.map((dep) => {
-      const sourceServiceData = services.find(s => s.id === dep.source);
-      const targetServiceData = services.find(s => s.id === dep.target);
+      const sourceServiceData = services.find((s) => s.id === dep.source);
+      const targetServiceData = services.find((s) => s.id === dep.target);
       
       let edgeStatus: 'healthy' | 'degraded' | 'critical' = 'healthy';
       if (sourceServiceData?.status === 'critical' || targetServiceData?.status === 'critical') {
@@ -91,34 +85,14 @@ export default function DependencyGraph({
       };
     });
 
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-      initialNodes,
-      initialEdges
-    );
-
-    setNodes(layoutedNodes);
-    setEdges(layoutedEdges);
-    setIsLayouted(true);
-  }, [services, rootCauseServiceId, affectedServiceIds, setNodes, setEdges]);
-
-  if (!isLayouted) {
-    return (
-      <div className="w-full h-full bg-slate-950 flex items-center justify-center text-slate-400">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
-          <span>Computing Topology Layout...</span>
-        </div>
-      </div>
-    );
-  }
+    return getLayoutedElements(initialNodes, initialEdges);
+  }, [services, rootCauseServiceId, affectedServiceIds]);
 
   return (
     <div className="w-full h-full bg-slate-950">
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         fitView
         className="bg-slate-950"
