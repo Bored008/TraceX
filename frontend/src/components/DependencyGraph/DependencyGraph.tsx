@@ -74,8 +74,9 @@ export default function DependencyGraph({
   const nodes: Node<ServiceNodeData>[] = useMemo(() => {
     return Object.entries(SERVICE_CONFIG).map(([id, config]) => {
       const serviceData = services.find((s) => s.id === id);
-      const isRootCause = id === rootCauseServiceId;
-      const isAffected = affectedServiceIds.includes(id);
+      const isUnhealthy = serviceData?.status === 'degraded' || serviceData?.status === 'critical';
+      const isRootCause = id === rootCauseServiceId && (isUnhealthy || !serviceData);
+      const isAffected = affectedServiceIds.includes(id) && (isUnhealthy || !serviceData);
 
       return {
         id,

@@ -106,10 +106,27 @@ export function useDashboard() {
 
     const onMetricsUpdate = (data: { timestamp: number; services: ServiceInfo[] }) => {
       if (data && Array.isArray(data.services) && data.services.length > 0) {
-        setState((prev) => ({
-          ...prev,
-          services: data.services,
-        }));
+        setState((prev) => {
+          const hasUnhealthyService = data.services.some(
+            (s) => s.status === 'degraded' || s.status === 'critical' || s.status === 'down'
+          );
+
+          // If no services are degraded or critical, clear any stale incident / RCA state
+          if (!hasUnhealthyService && (prev.systemStatus === 'incident' || prev.rootCauseResult !== null)) {
+            return {
+              ...prev,
+              services: data.services,
+              rootCauseResult: null,
+              activeScenario: null,
+              systemStatus: 'healthy',
+            };
+          }
+
+          return {
+            ...prev,
+            services: data.services,
+          };
+        });
       }
     };
 

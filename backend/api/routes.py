@@ -2,6 +2,7 @@ import time
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
+from .websocket import broadcast_chaos_injected, broadcast_chaos_reset
 
 router = APIRouter(prefix="/api")
 
@@ -153,6 +154,7 @@ async def inject_chaos(req: ChaosInjectRequest, request: Request):
     app_state = request.app.state
     try:
         fault = app_state.digital_twin.inject_fault(req.scenario)
+        await broadcast_chaos_injected(req.scenario, fault.target_service)
         return {
             "status": "injected",
             "scenario": req.scenario,
@@ -166,6 +168,7 @@ async def reset_chaos(request: Request):
     app_state = request.app.state
     app_state.digital_twin.reset()
     app_state.recent_anomalies.clear()
+    await broadcast_chaos_reset()
     return {"status": "reset", "message": "All faults cleared and services reset to baseline"}
 
 class OrderItemPayload(BaseModel):
@@ -191,13 +194,15 @@ async def checkout_order(req: OrderCheckoutRequest, request: Request):
     # If the user explicitly requested a simulated fault from the UI, trigger it!
     if req.simulateFaultScenario:
         try:
-            app_state.digital_twin.inject_fault(req.simulateFaultScenario)
+            fault = app_state.digital_twin.inject_fault(req.simulateFaultScenario)
+            await broadcast_chaos_injected(req.simulateFaultScenario, fault.target_service)
         except Exception:
             pass
     elif req.autoHeal:
         # User requested normal healthy checkout or auto-remediation: reset active faults
         app_state.digital_twin.reset()
         app_state.recent_anomalies.clear()
+        await broadcast_chaos_reset()
 
     # Check active faults in digital twin
     active_faults = app_state.digital_twin.fault_injector.get_active_faults()
