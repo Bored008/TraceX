@@ -1,12 +1,14 @@
 export interface FoodItem {
   id: string;
   name: string;
-  category: 'burgers' | 'pizzas' | 'asian' | 'mexican' | 'desserts' | 'beverages';
+  category: string;
   price: number;
+  originalPrice?: number;
+  unit: string;
   rating: number;
   reviewsCount: number;
   prepTime: string;
-  calories: number;
+  calories?: number;
   icon: string;
   badge?: string;
   description: string;
@@ -24,6 +26,7 @@ export interface CheckoutPayload {
   deliveryAddress: string;
   paymentMethod: 'credit_card' | 'upi' | 'apple_pay';
   simulateFaultScenario?: string;
+  autoHeal?: boolean;
 }
 
 export interface OrderOutcome {

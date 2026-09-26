@@ -49,9 +49,9 @@ export function useCart() {
     return cartItems.reduce((acc, ci) => acc + ci.item.price * ci.quantity, 0);
   }, [cartItems]);
 
-  const deliveryFee = useMemo(() => (subtotal > 0 ? (subtotal > 35 ? 0 : 2.99) : 0), [subtotal]);
-  const tax = useMemo(() => Math.round(subtotal * 0.0825 * 100) / 100, [subtotal]);
-  const total = useMemo(() => Math.round((subtotal + deliveryFee + tax) * 100) / 100, [subtotal, deliveryFee, tax]);
+  const deliveryFee = useMemo(() => (subtotal > 0 ? (subtotal > 199 ? 0 : 15) : 0), [subtotal]);
+  const tax = useMemo(() => (subtotal > 0 ? 4 : 0), [subtotal]); // handling charge
+  const total = useMemo(() => subtotal + deliveryFee + tax, [subtotal, deliveryFee, tax]);
 
   const resetSystem = useCallback(async () => {
     try {
@@ -101,7 +101,7 @@ export function useCart() {
             timestamp: Date.now(),
             totalAmount: total,
             traceId,
-            deliveryMinutes: 24,
+            deliveryMinutes: 8,
           });
           clearCart();
         } else {
@@ -175,7 +175,7 @@ export function useCart() {
             timestamp: Date.now(),
             totalAmount: total,
             traceId,
-            deliveryMinutes: 25,
+            deliveryMinutes: 8,
           });
           clearCart();
         }

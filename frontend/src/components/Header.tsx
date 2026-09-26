@@ -33,14 +33,14 @@ const Header: React.FC<HeaderProps> = ({ systemStatus, incidentCount, isBackendC
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Link to TraceBites Food Storefront */}
+        {/* Link to Blinkit Storefront */}
         <Link
           href="/store"
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-orange-500/40 bg-orange-950/30 hover:bg-orange-900/50 hover:border-orange-500/60 text-orange-300 text-xs font-semibold transition-all group shadow-sm"
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/40 bg-emerald-950/30 hover:bg-emerald-900/50 hover:border-emerald-500/60 text-emerald-300 text-xs font-semibold transition-all group shadow-sm"
         >
-          <span className="text-sm">🍕</span>
-          <span>TraceBites Storefront</span>
-          <span className="text-orange-400 group-hover:translate-x-0.5 transition-transform">➔</span>
+          <span className="text-sm">⚡</span>
+          <span>Blinkit Storefront</span>
+          <span className="text-emerald-400 group-hover:translate-x-0.5 transition-transform">➔</span>
         </Link>
 
         {/* Backend live connection status badge */}

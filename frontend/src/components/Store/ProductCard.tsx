@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { FoodItem } from '@/types/store';
-import { Star, Clock, Flame, Plus, Minus } from 'lucide-react';
+import { Clock, Plus, Minus, Star } from 'lucide-react';
 
 interface ProductCardProps {
   item: FoodItem;
@@ -17,95 +17,106 @@ export default function ProductCard({
   onAddToCart,
   onUpdateQuantity,
 }: ProductCardProps) {
-  return (
-    <div className="flex flex-col bg-slate-900/70 border border-slate-800/80 rounded-2xl overflow-hidden hover:border-slate-700 hover:shadow-xl hover:shadow-black/40 transition-all duration-300 group">
-      {/* Visual Header */}
-      <div className="relative h-44 bg-gradient-to-br from-slate-800/80 via-slate-900/60 to-slate-950 flex items-center justify-center overflow-hidden border-b border-slate-800/50">
-        {/* Glow backdrop */}
-        <div className="absolute w-28 h-28 bg-orange-500/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
-        
-        {/* Large Food Emoji Icon */}
-        <span className="text-6xl filter drop-shadow-lg group-hover:scale-110 transition-transform duration-300 select-none">
-          {item.icon}
-        </span>
+  const discountPercent =
+    item.originalPrice && item.originalPrice > item.price
+      ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)
+      : null;
 
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex items-center gap-1.5">
-          {item.badge && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30 backdrop-blur-md">
-              {item.badge}
+  return (
+    <div className="flex flex-col bg-white border border-gray-200/90 rounded-2xl p-3 shadow-xs hover:shadow-md hover:border-gray-300 transition-all duration-200 group">
+      {/* Visual Product Showcase */}
+      <div className="relative h-36 bg-[#f8f9fc] rounded-xl flex items-center justify-center overflow-hidden border border-gray-100">
+        {/* Delivery Time Badge (Top Left) */}
+        <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-white/95 px-2 py-0.5 rounded-md shadow-xs border border-gray-150">
+          <Clock className="w-2.5 h-2.5 text-[#0c831f]" />
+          <span className="text-[10px] font-extrabold text-gray-800 tracking-tight">
+            {item.prepTime || '8 MINS'}
+          </span>
+        </div>
+
+        {/* Veg / Non-Veg Indicator & Badges (Top Right) */}
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+          {discountPercent && (
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tight bg-blue-50 text-blue-700 border border-blue-200">
+              {discountPercent}% OFF
             </span>
           )}
           <span
-            className={`w-4 h-4 rounded-md border flex items-center justify-center p-0.5 bg-slate-950/80 ${
-              item.isVegetarian ? 'border-emerald-500' : 'border-red-500'
+            className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center p-0.5 bg-white shadow-2xs ${
+              item.isVegetarian ? 'border-emerald-600' : 'border-red-600'
             }`}
             title={item.isVegetarian ? 'Pure Vegetarian' : 'Non-Vegetarian'}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                item.isVegetarian ? 'bg-emerald-500' : 'bg-red-500'
+                item.isVegetarian ? 'bg-emerald-600' : 'bg-red-600'
               }`}
             />
           </span>
         </div>
 
-        {/* Prep time badge */}
-        <div className="absolute bottom-2.5 right-3 flex items-center gap-1 text-[11px] font-mono text-slate-300 bg-slate-950/70 px-2 py-0.5 rounded-full border border-slate-800 backdrop-blur-md">
-          <Clock className="w-3 h-3 text-amber-400" />
-          <span>{item.prepTime}</span>
-        </div>
+        {/* Large Food Emoji Icon */}
+        <span className="text-5xl filter drop-shadow-sm group-hover:scale-110 transition-transform duration-200 select-none">
+          {item.icon}
+        </span>
       </div>
 
-      {/* Content Details */}
-      <div className="p-4 flex-1 flex flex-col justify-between">
+      {/* Item Details */}
+      <div className="pt-2.5 flex-1 flex flex-col justify-between">
         <div>
-          <div className="flex items-center justify-between gap-2 mb-1.5">
-            <h3 className="font-bold text-slate-100 text-sm group-hover:text-orange-400 transition-colors line-clamp-1">
-              {item.name}
-            </h3>
-            <div className="flex items-center gap-1 text-xs text-amber-400 font-semibold flex-shrink-0">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+          <h3 className="font-bold text-gray-900 text-xs sm:text-[13px] leading-tight line-clamp-2 min-h-[32px] group-hover:text-[#0c831f] transition-colors">
+            {item.name}
+          </h3>
+
+          {/* Unit Size */}
+          <div className="flex items-center justify-between text-xs text-gray-500 font-medium mt-1">
+            <span>{item.unit || '1 unit'}</span>
+            <div className="flex items-center gap-0.5 text-[11px] text-amber-600 font-semibold">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
               <span>{item.rating}</span>
             </div>
           </div>
-
-          <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mb-3">
-            {item.description}
-          </p>
         </div>
 
-        {/* Bottom Price & Add Action */}
-        <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+        {/* Bottom Price & Blinkit ADD Button */}
+        <div className="pt-3 mt-1 border-t border-gray-100 flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono">Price</span>
-            <span className="text-base font-extrabold text-white font-mono">
-              ${item.price.toFixed(2)}
-            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-sm sm:text-base font-black text-gray-900">
+                ₹{item.price}
+              </span>
+              {item.originalPrice && item.originalPrice > item.price && (
+                <span className="text-xs text-gray-400 line-through">
+                  ₹{item.originalPrice}
+                </span>
+              )}
+            </div>
           </div>
 
+          {/* Blinkit ADD / Stepper Button */}
           {quantityInCart === 0 ? (
             <button
               onClick={onAddToCart}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-500/15 hover:bg-orange-500 text-orange-400 hover:text-white border border-orange-500/30 hover:border-orange-500 text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95 shadow-sm"
+              className="px-4 py-1.5 rounded-lg border border-[#0c831f] bg-[#f7fff9] hover:bg-[#0c831f] text-[#0c831f] hover:text-white font-black text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-xs active:scale-95"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add</span>
+              ADD
             </button>
           ) : (
-            <div className="flex items-center gap-2 bg-slate-950 border border-orange-500/40 rounded-xl px-1.5 py-1 text-xs font-semibold text-white">
+            <div className="flex items-center justify-between bg-[#0c831f] rounded-lg px-2 py-1 text-xs font-bold text-white shadow-xs min-w-[74px]">
               <button
                 onClick={() => onUpdateQuantity(quantityInCart - 1)}
-                className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+                className="w-5 h-5 flex items-center justify-center hover:bg-black/20 rounded transition-colors cursor-pointer"
+                title="Decrease quantity"
               >
-                <Minus className="w-3 h-3" />
+                <Minus className="w-3 h-3 stroke-[3]" />
               </button>
-              <span className="w-4 text-center font-mono">{quantityInCart}</span>
+              <span className="px-1 font-mono font-extrabold">{quantityInCart}</span>
               <button
                 onClick={() => onUpdateQuantity(quantityInCart + 1)}
-                className="w-6 h-6 flex items-center justify-center rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-colors cursor-pointer"
+                className="w-5 h-5 flex items-center justify-center hover:bg-black/20 rounded transition-colors cursor-pointer"
+                title="Increase quantity"
               >
-                <Plus className="w-3 h-3" />
+                <Plus className="w-3 h-3 stroke-[3]" />
               </button>
             </div>
           )}
