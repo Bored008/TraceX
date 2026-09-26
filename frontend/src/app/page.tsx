@@ -2,7 +2,22 @@
 
 import { useDashboard } from '@/hooks/useDashboard';
 import Header from '@/components/Header';
-import DependencyGraph from '@/components/DependencyGraph/DependencyGraph';
+import dynamic from 'next/dynamic';
+
+const DependencyGraph = dynamic(
+  () => import('@/components/DependencyGraph/DependencyGraph'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center bg-slate-950 text-slate-500 font-mono text-xs">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+          <span>Loading Service Topology...</span>
+        </div>
+      </div>
+    ),
+  }
+);
 import RootCausePanel from '@/components/RootCausePanel/RootCausePanel';
 import PropagationPath from '@/components/RootCausePanel/PropagationPath';
 import MetricsGrid from '@/components/MetricsDashboard/MetricsGrid';

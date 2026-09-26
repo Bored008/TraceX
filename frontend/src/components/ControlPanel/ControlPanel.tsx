@@ -60,7 +60,7 @@ export default function ControlPanel({ onInjectFault, onReset, isActive, activeS
       <div className="border-t border-slate-700 pt-4 flex justify-end">
         <button
           onClick={onReset}
-          disabled={!isActive}
+          disabled={!Boolean(isActive)}
           className={`
             flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm
             ${isActive
