@@ -204,13 +204,15 @@ async def checkout_order(req: OrderCheckoutRequest, request: Request):
         scenario_messages = {
             "db_overload": ("postgres-db", 504, "Connection Pool Timeout", "Database pool saturated; transaction rolled back."),
             "payment_crash": ("payment-service", 502, "Bad Gateway", "Payment gateway unresponsive."),
+            "network_partition": ("payment-service", 504, "Payment Gateway Unreachable", "Network partition between order service and payment gateway; socket timed out."),
             "auth_crash": ("auth-service", 401, "Authentication Service Failure", "User authorization token validation failed."),
             "cdn_latency": ("cdn", 504, "Gateway Timeout", "Asset caching layer exceeded SLA threshold."),
+            "cdn_spike": ("cdn", 504, "Gateway Timeout", "Asset caching layer exceeded SLA threshold."),
             "memory_leak": ("inventory-service", 503, "Service Unavailable", "Out of memory error in inventory verification.")
         }
 
         fault_info = scenario_messages.get(
-            primary_fault.scenario,
+            primary_fault.scenario.value if hasattr(primary_fault.scenario, "value") else str(primary_fault.scenario),
             (failed_service, 500, "Internal Dependency Error", f"Failure detected at microservice {failed_service}")
         )
 

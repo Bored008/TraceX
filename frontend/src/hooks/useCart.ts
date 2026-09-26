@@ -62,10 +62,14 @@ export function useCart() {
       const traceId = `tr-${Math.random().toString(36).substring(2, 9)}`;
       const orderId = `TB-${Math.floor(100000 + Math.random() * 900000)}`;
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+
       try {
         const res = await fetch(`${API_BASE_URL}/api/order/checkout`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
           body: JSON.stringify({
             items: cartItems.map((ci) => ({ id: ci.item.id, quantity: ci.quantity, price: ci.item.price })),
             customerName: 'Alex Mercer',
@@ -76,6 +80,7 @@ export function useCart() {
           }),
         });
 
+        clearTimeout(timeoutId);
         const data = await res.json();
 
         if (res.ok && data.status === 'confirmed') {
@@ -97,8 +102,8 @@ export function useCart() {
             totalAmount: total,
             traceId: data.traceId || traceId,
             failureDetails: {
-              service: data.failedService || 'postgres-db',
-              statusCode: res.status || 504,
+              service: data.failedService || (simulateFault === 'db_overload' ? 'postgres-db' : 'payment-service'),
+              statusCode: data.statusCode || 504,
               errorType: data.errorType || 'Service Unavailable',
               userMessage: data.userMessage || 'We were unable to process your order at this time.',
               technicalMessage: data.technicalMessage || 'Connection pool timeout to downstream storage.',
@@ -106,8 +111,37 @@ export function useCart() {
           });
         }
       } catch (err) {
-        // Fallback simulation if backend endpoint is unavailable
+        clearTimeout(timeoutId);
+        // Fallback simulation if backend endpoint is unavailable or timed out
         if (simulateFault) {
+          const scenarioDetails: Record<string, { service: string; type: string; msg: string }> = {
+            db_overload: {
+              service: 'postgres-db',
+              type: 'Connection Pool Timeout',
+              msg: 'Database pool saturated; transaction rolled back.',
+            },
+            payment_crash: {
+              service: 'payment-service',
+              type: 'Bad Gateway',
+              msg: 'Payment gateway unresponsive; socket disconnected.',
+            },
+            network_partition: {
+              service: 'payment-service',
+              type: 'Payment Gateway Unreachable',
+              msg: 'Network partition between order service and payment gateway; socket timed out.',
+            },
+            auth_crash: {
+              service: 'auth-service',
+              type: 'Authentication Service Failure',
+              msg: 'User authorization token validation failed.',
+            },
+          };
+          const info = scenarioDetails[simulateFault] || {
+            service: 'postgres-db',
+            type: 'Cascading Dependency Timeout',
+            msg: 'Downstream microservice failed health check threshold.',
+          };
+
           setOrderOutcome({
             orderId,
             status: 'failed',
@@ -115,11 +149,11 @@ export function useCart() {
             totalAmount: total,
             traceId,
             failureDetails: {
-              service: simulateFault === 'db_overload' ? 'postgres-db' : 'payment-service',
+              service: info.service,
               statusCode: 504,
-              errorType: 'Cascading Dependency Timeout',
+              errorType: info.type,
               userMessage: 'Your transaction could not be processed due to a temporary system disruption.',
-              technicalMessage: 'Downstream microservice failed health check threshold.',
+              technicalMessage: info.msg,
             },
           });
         } else {
