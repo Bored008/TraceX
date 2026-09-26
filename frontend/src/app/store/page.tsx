@@ -35,6 +35,7 @@ export default function StorePage() {
     tax,
     total,
     placeOrder,
+    resetSystem,
   } = useCart();
 
   const { systemStatus } = useDashboard();
@@ -231,6 +232,7 @@ export default function StorePage() {
           setOrderOutcome(null);
           setIsCheckoutModalOpen(true);
         }}
+        onAutoHeal={resetSystem}
       />
     </div>
   );

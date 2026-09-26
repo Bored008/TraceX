@@ -12,15 +12,17 @@ import {
   ShieldAlert,
   RotateCcw,
   Check,
+  Sparkles,
 } from 'lucide-react';
 
 interface OrderOutcomeModalProps {
   outcome: OrderOutcome | null;
   onClose: () => void;
   onRetry: () => void;
+  onAutoHeal?: () => Promise<void> | void;
 }
 
-export default function OrderOutcomeModal({ outcome, onClose, onRetry }: OrderOutcomeModalProps) {
+export default function OrderOutcomeModal({ outcome, onClose, onRetry, onAutoHeal }: OrderOutcomeModalProps) {
   if (!outcome) return null;
 
   const isConfirmed = outcome.status === 'confirmed';
@@ -170,25 +172,42 @@ export default function OrderOutcomeModal({ outcome, onClose, onRetry }: OrderOu
           )}
 
           {/* Bottom Controls */}
-          <div className="flex items-center justify-end gap-3 pt-2">
-            {!isConfirmed && (
+          <div className="flex items-center justify-between gap-3 pt-2">
+            {!isConfirmed && onAutoHeal ? (
               <button
                 type="button"
-                onClick={onRetry}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+                onClick={async () => {
+                  await onAutoHeal();
+                  onRetry();
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-500/20 active:scale-95 cursor-pointer"
+                title="Reset active chaos faults back to baseline and open checkout to retry"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Retry Order</span>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Auto-Heal & Retry</span>
               </button>
-            )}
+            ) : <div />}
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition-all shadow-md shadow-orange-500/20 cursor-pointer"
-            >
-              Done
-            </button>
+            <div className="flex items-center gap-2">
+              {!isConfirmed && (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Retry</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -180,6 +180,7 @@ class OrderCheckoutRequest(BaseModel):
     paymentMethod: str = "credit_card"
     simulateFaultScenario: Optional[str] = None
     traceId: Optional[str] = None
+    autoHeal: Optional[bool] = False
 
 @router.post("/order/checkout")
 async def checkout_order(req: OrderCheckoutRequest, request: Request):
@@ -193,6 +194,10 @@ async def checkout_order(req: OrderCheckoutRequest, request: Request):
             app_state.digital_twin.inject_fault(req.simulateFaultScenario)
         except Exception:
             pass
+    elif req.autoHeal:
+        # User requested normal healthy checkout or auto-remediation: reset active faults
+        app_state.digital_twin.reset()
+        app_state.recent_anomalies.clear()
 
     # Check active faults in digital twin
     active_faults = app_state.digital_twin.fault_injector.get_active_faults()

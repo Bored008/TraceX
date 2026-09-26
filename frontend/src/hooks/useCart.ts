@@ -53,14 +53,24 @@ export function useCart() {
   const tax = useMemo(() => Math.round(subtotal * 0.0825 * 100) / 100, [subtotal]);
   const total = useMemo(() => Math.round((subtotal + deliveryFee + tax) * 100) / 100, [subtotal, deliveryFee, tax]);
 
+  const resetSystem = useCallback(async () => {
+    try {
+      await fetch(`${API_BASE_URL}/api/chaos/reset`, { method: 'POST' });
+    } catch (err) {
+      console.error('Failed to reset system faults:', err);
+    }
+  }, []);
+
   // Submit order to backend microservice flow
   const placeOrder = useCallback(
-    async (simulateFault?: string) => {
+    async (simulateFault?: string, autoHeal?: boolean) => {
       if (cartItems.length === 0) return;
 
       setIsSubmittingOrder(true);
       const traceId = `tr-${Math.random().toString(36).substring(2, 9)}`;
       const orderId = `TB-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      const shouldAutoHeal = autoHeal ?? (!simulateFault || simulateFault === 'none');
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3500);
@@ -75,8 +85,9 @@ export function useCart() {
             customerName: 'Alex Mercer',
             deliveryAddress: '742 Evergreen Terrace, Springfield',
             paymentMethod: 'credit_card',
-            simulateFaultScenario: simulateFault || undefined,
+            simulateFaultScenario: simulateFault && simulateFault !== 'none' ? simulateFault : undefined,
             traceId,
+            autoHeal: shouldAutoHeal,
           }),
         });
 
@@ -195,5 +206,6 @@ export function useCart() {
     tax,
     total,
     placeOrder,
+    resetSystem,
   };
 }
