@@ -9,10 +9,10 @@ const DependencyGraph = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full flex items-center justify-center bg-slate-950 text-slate-500 font-mono text-xs">
+      <div className="w-full h-full flex items-center justify-center bg-black text-neutral-500 font-mono text-xs">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
-          <span>Loading Service Topology...</span>
+          <div className="w-4 h-4 rounded-full border border-white/40 border-t-transparent animate-spin" />
+          <span>Initializing Topology Graph...</span>
         </div>
       </div>
     ),
@@ -40,9 +40,14 @@ export default function DashboardPage() {
     selectService,
   } = useDashboard();
 
+  const isHarm = systemStatus !== 'healthy' || Boolean(rootCauseResult);
+
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30">
-      {/* Top Navigation & Status */}
+    <div className="min-h-screen bg-black text-white flex flex-col font-sans selection:bg-white/20 relative">
+      {/* Subtle Top White Gradient Accent */}
+      <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
+
+      {/* Top Header */}
       <Header
         systemStatus={systemStatus}
         incidentCount={rootCauseResult ? 1 : 0}
@@ -50,29 +55,35 @@ export default function DashboardPage() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 p-4 lg:p-6 space-y-6 max-w-[1920px] mx-auto w-full">
+      <main className="flex-1 p-4 lg:p-6 space-y-6 max-w-[1920px] mx-auto w-full relative z-10">
         {/* Top Grid: Service Topology (2/3) + RCA & Diagnostics (1/3) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Left: Live Dependency Graph */}
-          <section className="lg:col-span-8 flex flex-col rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-xl shadow-2xl overflow-hidden min-h-[580px] lg:min-h-[640px]">
-            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-b border-slate-800/80 bg-slate-950/40">
+          <section className="lg:col-span-8 flex flex-col rounded-lg border border-white/10 bg-black/60 backdrop-blur-md shadow-lg overflow-hidden min-h-[580px] lg:min-h-[640px]">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-white/10 bg-white/[0.01]">
               <div className="flex items-center gap-2.5">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${systemStatus === 'healthy' ? 'bg-emerald-400 opacity-75' : 'bg-red-400 opacity-75'}`}></span>
-                  <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${systemStatus === 'healthy' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                <span className="relative flex h-2 w-2">
+                  {isHarm && (
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                  )}
+                  <span
+                    className={`relative inline-flex rounded-full h-2 w-2 ${
+                      isHarm ? 'bg-red-500' : 'bg-emerald-500'
+                    }`}
+                  />
                 </span>
-                <h2 className="text-sm font-semibold tracking-wide text-slate-200">
-                  Live Service Dependency Topology
+                <h2 className="text-xs font-mono font-semibold tracking-wider uppercase text-neutral-200">
+                  Live Server Dependency Topology
                 </h2>
               </div>
-              <div className="flex items-center gap-4 text-xs text-slate-400 font-mono">
+              <div className="flex items-center gap-3 text-xs text-neutral-400 font-mono">
                 <span>{services.length} Nodes</span>
-                <span className="text-slate-600">•</span>
-                <span className="text-indigo-400">Interactive DAG Flow</span>
+                <span className="text-neutral-700">•</span>
+                <span className="text-emerald-400">Green Dotted Telemetry Flow</span>
               </div>
             </div>
 
-            <div className="flex-1 relative w-full h-[540px] lg:h-[600px]">
+            <div className="flex-1 relative w-full h-[540px] lg:h-[600px] bg-black">
               <DependencyGraph
                 services={services}
                 rootCauseServiceId={rootCauseResult?.rootCause.serviceId}
@@ -82,18 +93,17 @@ export default function DashboardPage() {
           </section>
 
           {/* Right: Root Cause Analysis, Propagation & Blast Radius */}
-          <section className="lg:col-span-4 flex flex-col gap-5">
+          <section className="lg:col-span-4 flex flex-col gap-4">
             {/* RCA Primary Diagnostic Card */}
             <RootCausePanel result={rootCauseResult} />
 
             {/* Failure Propagation Pathway */}
             {rootCauseResult && (
-              <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-xl p-5 shadow-xl">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-red-400 text-lg">⚡</span>
-                  <h3 className="text-sm font-semibold tracking-wide text-slate-200">
-                    Failure Propagation Cascade
-                  </h3>
+              <div className="rounded-lg border border-white/10 bg-white/[0.02] backdrop-blur-md p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
+                  <span className="text-xs font-mono uppercase tracking-wider text-red-400 font-semibold">
+                    Causal Propagation Cascade
+                  </span>
                 </div>
                 <PropagationPath
                   steps={rootCauseResult.propagationPath}
@@ -113,9 +123,9 @@ export default function DashboardPage() {
           </section>
         </div>
 
-        {/* AI Diagnostic Explanation Section */}
+        {/* Diagnostic Synthesis & Fix Section (shown when an issue exists) */}
         {rootCauseResult && (
-          <section className="rounded-2xl border border-indigo-900/40 bg-gradient-to-r from-indigo-950/20 via-slate-900/60 to-purple-950/20 backdrop-blur-xl p-5 shadow-2xl">
+          <section className="rounded-lg border border-white/10 bg-white/[0.02] backdrop-blur-md shadow-sm">
             <AIExplanation
               explanation={rootCauseResult.aiExplanation || rootCauseResult.explanation}
               suggestedFix={rootCauseResult.suggestedFix}
@@ -124,25 +134,25 @@ export default function DashboardPage() {
         )}
 
         {/* Lower Grid: Service Metrics + Chronological Timeline */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Service Telemetry & Sparklines */}
-          <section className="lg:col-span-7 flex flex-col rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-xl shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800/80 bg-slate-950/40">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                <h2 className="text-sm font-semibold text-slate-200">
-                  Telemetry & Performance Metrics
+          <section className="lg:col-span-7 flex flex-col rounded-lg border border-white/10 bg-black/60 backdrop-blur-md shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-white/[0.01]">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <h2 className="text-xs font-mono font-semibold uppercase tracking-wider text-neutral-200">
+                  Node Telemetry & Performance
                 </h2>
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-xs text-slate-400 font-medium">Service:</label>
+                <label className="text-[11px] text-neutral-400 font-mono">Service:</label>
                 <select
                   aria-label="Filter Telemetry Service"
-                  className="text-xs bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono"
+                  className="text-xs bg-black border border-white/15 rounded px-2.5 py-1 text-white focus:outline-none focus:border-white/40 transition-all font-mono cursor-pointer"
                   value={selectedService?.id || ''}
                   onChange={(e) => selectService(e.target.value || null)}
                 >
-                  <option value="">Select Service...</option>
+                  <option value="">Select Service Node...</option>
                   {services.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name} ({s.status})
@@ -151,21 +161,21 @@ export default function DashboardPage() {
                 </select>
               </div>
             </div>
-            <div className="p-5">
+            <div className="p-4">
               <MetricsGrid service={selectedService} />
             </div>
           </section>
 
           {/* Incident Timeline */}
-          <section className="lg:col-span-5 flex flex-col rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-xl shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800/80 bg-slate-950/40">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
-                <h2 className="text-sm font-semibold text-slate-200">
-                  Chronological Incident Timeline
+          <section className="lg:col-span-5 flex flex-col rounded-lg border border-white/10 bg-black/60 backdrop-blur-md shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-white/[0.01]">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
+                <h2 className="text-xs font-mono font-semibold uppercase tracking-wider text-neutral-200">
+                  Event Stream & Anomaly Log
                 </h2>
               </div>
-              <span className="text-xs text-slate-500 font-mono">
+              <span className="text-[11px] text-neutral-500 font-mono">
                 {timelineEvents.length} Events
               </span>
             </div>
@@ -175,8 +185,8 @@ export default function DashboardPage() {
           </section>
         </div>
 
-        {/* Chaos Engineering & Fault Injection Control Room */}
-        <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-xl p-5 shadow-2xl">
+        {/* Chaos Engineering & Fault Simulator */}
+        <section className="rounded-lg border border-white/10 bg-black/60 backdrop-blur-md shadow-sm">
           <ControlPanel
             onInjectFault={injectFault}
             onReset={resetServices}
@@ -187,8 +197,8 @@ export default function DashboardPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/60 py-4 px-6 text-center text-xs text-slate-500">
-        TraceX • Intelligent Distributed System Root Cause Analyzer • Hackathon Edition
+      <footer className="border-t border-white/10 py-4 px-6 text-center text-[11px] text-neutral-500 font-mono select-none">
+        TraceX • Distributed Topology Root Cause Analyzer • Minimalist SRE Console
       </footer>
     </div>
   );

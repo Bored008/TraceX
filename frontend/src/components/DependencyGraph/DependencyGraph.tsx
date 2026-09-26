@@ -34,19 +34,19 @@ export default function DependencyGraph({
   rootCauseServiceId, 
   affectedServiceIds = [] 
 }: DependencyGraphProps) {
-  // Memoize layouted node positions once so Dagre layout doesn't re-run every metric tick
+  // Memoize layouted node positions once
   const layoutedPositions = useMemo(() => {
     const rawNodes: Node<ServiceNodeData>[] = Object.entries(SERVICE_CONFIG).map(([id, config]) => ({
       id,
       type: 'service',
       position: { x: 0, y: 0 },
-      width: 220,
-      height: 160,
-      initialWidth: 220,
-      initialHeight: 160,
+      width: 210,
+      height: 155,
+      initialWidth: 210,
+      initialHeight: 155,
       handles: [
-        { type: 'target', position: Position.Top, x: 110, y: 0, width: 12, height: 12 },
-        { type: 'source', position: Position.Bottom, x: 110, y: 160, width: 12, height: 12 },
+        { type: 'target', position: Position.Top, x: 105, y: 0, width: 10, height: 10 },
+        { type: 'source', position: Position.Bottom, x: 105, y: 155, width: 10, height: 10 },
       ],
       data: {
         serviceId: id,
@@ -70,7 +70,7 @@ export default function DependencyGraph({
     return posMap;
   }, []);
 
-  // Compute reactive nodes and edges directly from props without setState/useEffect loops
+  // Compute reactive nodes
   const nodes: Node<ServiceNodeData>[] = useMemo(() => {
     return Object.entries(SERVICE_CONFIG).map(([id, config]) => {
       const serviceData = services.find((s) => s.id === id);
@@ -82,13 +82,13 @@ export default function DependencyGraph({
         id,
         type: 'service',
         position: layoutedPositions[id] || { x: 0, y: 0 },
-        width: 220,
-        height: 160,
-        initialWidth: 220,
-        initialHeight: 160,
+        width: 210,
+        height: 155,
+        initialWidth: 210,
+        initialHeight: 155,
         handles: [
-          { type: 'target', position: Position.Top, x: 110, y: 0, width: 12, height: 12 },
-          { type: 'source', position: Position.Bottom, x: 110, y: 160, width: 12, height: 12 },
+          { type: 'target', position: Position.Top, x: 105, y: 0, width: 10, height: 10 },
+          { type: 'source', position: Position.Bottom, x: 105, y: 155, width: 10, height: 10 },
         ],
         data: {
           serviceId: id,
@@ -108,6 +108,7 @@ export default function DependencyGraph({
     });
   }, [services, rootCauseServiceId, affectedServiceIds, layoutedPositions]);
 
+  // Compute reactive edges (green dotted lines for healthy, red for harm/critical)
   const edges: Edge[] = useMemo(() => {
     return SERVICE_DEPENDENCIES.map((dep) => {
       const sourceServiceData = services.find((s) => s.id === dep.source);
@@ -120,66 +121,69 @@ export default function DependencyGraph({
         edgeStatus = 'degraded';
       }
 
+      const isHarm = edgeStatus === 'critical' || edgeStatus === 'degraded';
+
       return {
         id: `e-${dep.source}-${dep.target}`,
         source: dep.source,
         target: dep.target,
-        animated: edgeStatus !== 'critical',
+        animated: true,
         style: {
-          strokeWidth: edgeStatus === 'critical' ? 3 : 2.5,
-          stroke: edgeStatus === 'critical' ? '#ef4444' : edgeStatus === 'degraded' ? '#f59e0b' : '#10b981',
+          strokeWidth: isHarm ? 2.5 : 2,
+          stroke: isHarm ? '#ef4444' : '#22c55e',
+          strokeDasharray: '4 4',
         },
       };
     });
   }, [services]);
 
   return (
-    <div className="w-full h-full bg-slate-950">
+    <div className="w-full h-full bg-black">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
         fitViewOptions={{ padding: 0.15 }}
-        className="bg-slate-950"
+        className="bg-black"
         minZoom={0.1}
         maxZoom={1.5}
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#334155" />
-        <Controls className="bg-slate-900 border-slate-800 fill-slate-300" />
+        <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#262626" />
+        <Controls className="bg-black/90 border-white/10 fill-neutral-300" />
         <MiniMap 
           nodeColor={(node) => {
             const data = node.data as { status?: string } | undefined;
             const status = data?.status;
-            if (status === 'critical') return '#ef4444';
-            if (status === 'degraded') return '#f59e0b';
-            if (status === 'down') return '#881337';
-            return '#10b981';
+            if (status === 'critical' || status === 'degraded' || status === 'down') return '#ef4444';
+            return '#22c55e';
           }}
-          maskColor="rgba(2, 6, 23, 0.75)"
-          className="bg-slate-900 border-slate-800"
+          maskColor="rgba(0, 0, 0, 0.85)"
+          className="bg-black/90 border border-white/10"
         />
-        <Panel position="top-right" className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 backdrop-blur shadow-xl">
-          <h4 className="text-slate-200 font-semibold mb-2 text-xs uppercase tracking-wider">Legend</h4>
-          <div className="flex flex-col gap-1.5 text-xs text-slate-400">
+        <Panel position="top-right" className="bg-black/80 p-3 rounded-lg border border-white/10 backdrop-blur-md shadow-lg">
+          <h4 className="text-white font-mono text-[10px] uppercase tracking-wider mb-2 font-semibold">
+            Status Legend
+          </h4>
+          <div className="flex flex-col gap-1.5 text-[11px] text-neutral-400 font-mono">
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-              <span>Healthy</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="text-emerald-400 font-medium">Safe / Healthy</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)] animate-pulse"></div>
-              <span>Degraded</span>
+              <span className="w-2 h-2 rounded-full bg-red-500" />
+              <span className="text-red-400 font-medium">Risk / Harm Detected</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse"></div>
-              <span>Critical / Failed</span>
+            <div className="flex items-center gap-2 pt-1 border-t border-white/10">
+              <span className="w-2 h-2 rounded-full ring-2 ring-red-500 bg-red-950" />
+              <span className="text-red-300">Root Cause Origin</span>
             </div>
-            <div className="flex items-center gap-2 mt-1 pt-1.5 border-t border-slate-800">
-              <div className="w-2.5 h-2.5 rounded-full ring-2 ring-red-500 bg-red-950"></div>
-              <span className="text-red-300 font-medium">Root Cause</span>
+            <div className="flex items-center gap-2 pt-1 text-[10px] text-neutral-500">
+              <span className="w-3 border-t-2 border-dashed border-emerald-500" />
+              <span>Telemetry Flow</span>
             </div>
           </div>
         </Panel>

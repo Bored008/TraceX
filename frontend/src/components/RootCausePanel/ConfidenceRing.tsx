@@ -8,20 +8,19 @@ interface ConfidenceRingProps {
 }
 
 const ConfidenceRing: React.FC<ConfidenceRingProps> = ({ value, size = 64 }) => {
-  const strokeWidth = size * 0.1;
+  const strokeWidth = 5;
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const strokeDashoffset = circumference - (value / 100) * circumference;
 
-  let color = 'text-rose-500'; // < 60
-  if (value >= 80) color = 'text-emerald-500';
-  else if (value >= 60) color = 'text-amber-500';
+  // Green for high confidence (>=75%), Red for uncertainty/risk (<75%)
+  const color = value >= 75 ? 'text-emerald-400' : 'text-red-400';
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+    <div className="relative flex items-center justify-center select-none" style={{ width: size, height: size }}>
       <svg className="transform -rotate-90 w-full h-full">
         <circle
-          className="text-slate-700"
+          className="text-white/10"
           strokeWidth={strokeWidth}
           stroke="currentColor"
           fill="transparent"
@@ -30,7 +29,7 @@ const ConfidenceRing: React.FC<ConfidenceRingProps> = ({ value, size = 64 }) => 
           cy={size / 2}
         />
         <circle
-          className={`${color} transition-all duration-1000 ease-out`}
+          className={`${color} transition-all duration-700 ease-out`}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
@@ -43,7 +42,7 @@ const ConfidenceRing: React.FC<ConfidenceRingProps> = ({ value, size = 64 }) => 
         />
       </svg>
       <div className="absolute flex flex-col items-center justify-center text-white">
-        <span className="text-sm font-bold">{value}%</span>
+        <span className="text-xs font-mono font-bold">{value}%</span>
       </div>
     </div>
   );

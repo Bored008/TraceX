@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Brain, Lightbulb, Loader2 } from 'lucide-react';
+import { Terminal, CheckCircle2, Loader2 } from 'lucide-react';
 
 interface AIExplanationProps {
   explanation?: string;
@@ -15,46 +15,54 @@ const AIExplanation: React.FC<AIExplanationProps> = ({
   isLoading = false,
 }) => {
   return (
-    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-xl border border-slate-700 p-6 relative overflow-hidden">
-      <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-        <Brain className="w-32 h-32 text-indigo-400" />
-      </div>
-
-      <div className="flex items-center space-x-2 mb-6">
-        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded p-1.5 flex items-center justify-center">
-          <Brain className="w-4 h-4 text-indigo-400" />
+    <div className="bg-white/[0.02] backdrop-blur-md rounded-lg border border-white/10 p-5 text-white font-sans">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+        <div className="flex items-center space-x-2.5">
+          <div className="w-7 h-7 rounded border border-white/15 bg-white/[0.04] flex items-center justify-center">
+            <Terminal className="w-3.5 h-3.5 text-neutral-300" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-white tracking-tight">
+              Diagnostic Synthesis & Remediation
+            </h3>
+            <p className="text-[11px] text-neutral-400 font-mono">Automated root-cause telemetry reasoning</p>
+          </div>
         </div>
-        <h3 className="text-lg font-medium text-white">AI Analysis</h3>
+
+        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded border border-white/15 bg-white/[0.03] text-neutral-400">
+          Trace Analysis
+        </span>
       </div>
 
       {isLoading ? (
-        <div className="space-y-4">
-          <div className="flex items-center space-x-3 text-indigo-400/80 mb-4">
-            <Loader2 className="w-5 h-5 animate-spin" />
-            <span className="text-sm font-medium">Analyzing traces and identifying root cause...</span>
+        <div className="space-y-3 py-2">
+          <div className="flex items-center space-x-2 text-neutral-400 text-xs font-mono">
+            <Loader2 className="w-4 h-4 animate-spin text-white" />
+            <span>Synthesizing microservice dependency telemetry...</span>
           </div>
-          <div className="space-y-3">
-            <div className="h-4 bg-slate-700/50 rounded animate-pulse w-3/4"></div>
-            <div className="h-4 bg-slate-700/50 rounded animate-pulse w-full"></div>
-            <div className="h-4 bg-slate-700/50 rounded animate-pulse w-5/6"></div>
-          </div>
+          <div className="h-10 bg-white/[0.02] rounded border border-white/5 animate-pulse" />
         </div>
       ) : (
-        <div className="space-y-6 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Causal Finding */}
           <div>
-            <h4 className="text-sm font-medium text-indigo-300 mb-2">Explanation</h4>
-            <div className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
-              {explanation || 'No explanation available.'}
+            <h4 className="text-xs font-mono text-neutral-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+              Observed Failure Mechanism
+            </h4>
+            <div className="bg-black/60 p-3.5 rounded border border-white/10 text-neutral-300 text-xs font-mono leading-relaxed whitespace-pre-wrap">
+              {explanation || 'No anomalies currently detected across service topology.'}
             </div>
           </div>
 
+          {/* Recommended Resolution */}
           {suggestedFix && (
             <div>
-              <div className="flex items-center space-x-2 mb-2 text-emerald-400">
-                <Lightbulb className="w-4 h-4" />
-                <h4 className="text-sm font-medium">Suggested Fix</h4>
-              </div>
-              <div className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap bg-slate-900/50 p-4 rounded-lg border border-slate-700/50 border-l-2 border-l-emerald-500">
+              <h4 className="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                Recommended System Remediation
+              </h4>
+              <div className="bg-emerald-950/15 p-3.5 rounded border border-emerald-500/30 text-emerald-200 text-xs font-mono leading-relaxed whitespace-pre-wrap">
                 {suggestedFix}
               </div>
             </div>

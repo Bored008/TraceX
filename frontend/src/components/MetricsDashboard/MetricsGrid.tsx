@@ -1,4 +1,5 @@
 'use client';
+
 import React from 'react';
 import { Clock, AlertTriangle, Activity, Cpu } from 'lucide-react';
 import MetricCard from './MetricCard';
@@ -11,9 +12,11 @@ interface MetricsGridProps {
 export default function MetricsGrid({ service }: MetricsGridProps) {
   if (!service) {
     return (
-      <div className="flex flex-col items-center justify-center w-full min-h-[12rem] rounded-xl border border-slate-800/80 border-dashed bg-slate-950/20">
-        <Activity className="w-8 h-8 text-slate-600 mb-2 opacity-40" />
-        <p className="text-slate-500 text-xs">Select any service node above to inspect real-time telemetry metrics</p>
+      <div className="flex flex-col items-center justify-center w-full min-h-[10rem] rounded-lg border border-dashed border-white/10 bg-white/[0.01] p-6 text-center">
+        <Activity className="w-6 h-6 text-neutral-600 mb-2" />
+        <p className="text-neutral-500 text-xs font-mono">
+          Click any microservice node in the topology above to inspect live telemetry
+        </p>
       </div>
     );
   }
@@ -25,19 +28,19 @@ export default function MetricsGrid({ service }: MetricsGridProps) {
   const throughput = metrics?.throughput ?? 0;
   const cpu = metrics?.cpu ?? 0;
 
-  const latencyStatus = latency > 500 ? 'critical' : latency > 200 ? 'warning' : 'normal';
-  const errorStatus = errorRate > 10 ? 'critical' : errorRate > 2 ? 'warning' : 'normal';
+  const latencyStatus = latency > 200 ? 'critical' : 'normal';
+  const errorStatus = errorRate > 2 ? 'critical' : 'normal';
   const throughputStatus = throughput < 50 ? 'critical' : 'normal';
-  const cpuStatus = cpu > 80 ? 'critical' : cpu > 60 ? 'warning' : 'normal';
+  const cpuStatus = cpu > 60 ? 'critical' : 'normal';
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
       <MetricCard
         title="P99 Latency"
         value={Math.round(latency)}
         unit="ms"
         status={latencyStatus}
-        icon={<Clock className="w-4 h-4" />}
+        icon={<Clock className="w-3.5 h-3.5" />}
         data={metricsHistory?.latency || []}
       />
       <MetricCard
@@ -45,7 +48,7 @@ export default function MetricsGrid({ service }: MetricsGridProps) {
         value={Number(errorRate.toFixed(2))}
         unit="%"
         status={errorStatus}
-        icon={<AlertTriangle className="w-4 h-4" />}
+        icon={<AlertTriangle className="w-3.5 h-3.5" />}
         data={metricsHistory?.errorRate || []}
       />
       <MetricCard
@@ -53,7 +56,7 @@ export default function MetricsGrid({ service }: MetricsGridProps) {
         value={Math.round(throughput)}
         unit="rps"
         status={throughputStatus}
-        icon={<Activity className="w-4 h-4" />}
+        icon={<Activity className="w-3.5 h-3.5" />}
         data={metricsHistory?.throughput || []}
       />
       <MetricCard
@@ -61,7 +64,7 @@ export default function MetricsGrid({ service }: MetricsGridProps) {
         value={Math.round(cpu)}
         unit="%"
         status={cpuStatus}
-        icon={<Cpu className="w-4 h-4" />}
+        icon={<Cpu className="w-3.5 h-3.5" />}
         data={metricsHistory?.cpu || []}
       />
     </div>

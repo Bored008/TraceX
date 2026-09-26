@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Search, Activity, Radio, Cpu } from 'lucide-react';
+import { Activity, Radio, ArrowUpRight } from 'lucide-react';
 
 interface HeaderProps {
   systemStatus: 'healthy' | 'incident';
@@ -14,58 +14,71 @@ const Header: React.FC<HeaderProps> = ({ systemStatus, incidentCount, isBackendC
   const isHealthy = systemStatus === 'healthy';
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80 text-white">
-      <div className="flex items-center space-x-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-          <Search className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-black tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-200 bg-clip-text text-transparent">
-              TraceX
-            </span>
-            <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-              MicroRCA v2.0
-            </span>
+    <header className="sticky top-0 z-40 bg-black/90 backdrop-blur-md border-b border-white/10 text-white select-none">
+      <div className="max-w-[1920px] mx-auto px-5 py-3.5 flex flex-wrap items-center justify-between gap-4">
+        {/* Brand & Subtitle */}
+        <div className="flex items-center space-x-3.5">
+          <div className="w-8 h-8 rounded-lg border border-white/20 bg-white/[0.04] flex items-center justify-center shadow-xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
           </div>
-          <p className="text-[11px] text-slate-400 font-mono">Distributed Topology Root Cause Analyzer</p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        {/* Link to Blinkit Storefront */}
-        <Link
-          href="/store"
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/40 bg-emerald-950/30 hover:bg-emerald-900/50 hover:border-emerald-500/60 text-emerald-300 text-xs font-semibold transition-all group shadow-sm"
-        >
-          <span className="text-sm">⚡</span>
-          <span>Blinkit Storefront</span>
-          <span className="text-emerald-400 group-hover:translate-x-0.5 transition-transform">➔</span>
-        </Link>
-
-        {/* Backend live connection status badge */}
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-mono transition-all ${
-          isBackendConnected
-            ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-            : 'bg-amber-950/40 border-amber-500/30 text-amber-300'
-        }`}>
-          <Radio className={`w-3.5 h-3.5 ${isBackendConnected ? 'text-emerald-400 animate-pulse' : 'text-amber-400'}`} />
-          <span>{isBackendConnected ? 'FastAPI Backend: Live (WebSocket)' : 'Standalone Fallback Mode'}</span>
-        </div>
-
-        {/* System Health / Incident indicator */}
-        <div className={`flex items-center px-3.5 py-1.5 rounded-full border text-xs font-semibold tracking-wide ${
-          isHealthy
-            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-            : 'bg-rose-500/15 border-rose-500/40 text-rose-300 shadow-lg shadow-rose-500/10'
-        }`}>
-          <div className="relative flex items-center justify-center w-3 h-3 mr-2">
-            {!isHealthy && <Activity className="absolute w-3.5 h-3.5 animate-ping opacity-75 text-rose-500" />}
-            <div className={`w-2 h-2 rounded-full ${isHealthy ? 'bg-emerald-400' : 'bg-rose-500'}`}></div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-white via-neutral-100 to-neutral-400 bg-clip-text text-transparent">
+                TraceX
+              </h1>
+              <span className="text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded border border-white/15 bg-white/[0.03] text-neutral-400">
+                SRE Topology
+              </span>
+            </div>
+            <p className="text-[11px] text-neutral-400 font-mono">Distributed Root Cause Analyzer</p>
           </div>
-          <span>
-            {isHealthy ? 'System Healthy' : `Active Incident (${incidentCount})`}
-          </span>
+        </div>
+
+        {/* Right Status Controls */}
+        <div className="flex items-center gap-3">
+          {/* Link to Storefront */}
+          <Link
+            href="/store"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/30 text-neutral-300 hover:text-white text-xs font-mono transition-all group shadow-xs"
+          >
+            <span>Blinkit Storefront</span>
+            <ArrowUpRight className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white transition-colors" />
+          </Link>
+
+          {/* Backend Connection Badge */}
+          <div
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-mono transition-all ${
+              isBackendConnected
+                ? 'bg-white/[0.02] border-white/10 text-neutral-300'
+                : 'bg-red-950/20 border-red-500/30 text-red-400'
+            }`}
+          >
+            <Radio
+              className={`w-3.5 h-3.5 ${isBackendConnected ? 'text-emerald-400' : 'text-red-400 animate-pulse'}`}
+            />
+            <span>{isBackendConnected ? 'WebSocket Live' : 'Backend Disconnected'}</span>
+          </div>
+
+          {/* System Health Status: Green (Safe) vs Red (Harm) */}
+          <div
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg border text-xs font-mono font-medium tracking-wide transition-all ${
+              isHealthy
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                : 'bg-red-500/15 border-red-500/40 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+            }`}
+          >
+            <span className="relative flex h-2 w-2">
+              {!isHealthy && (
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+              )}
+              <span
+                className={`relative inline-flex rounded-full h-2 w-2 ${
+                  isHealthy ? 'bg-emerald-500' : 'bg-red-500'
+                }`}
+              />
+            </span>
+            <span>{isHealthy ? 'System Normal' : `Harm Detected (${incidentCount})`}</span>
+          </div>
         </div>
       </div>
     </header>

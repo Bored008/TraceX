@@ -25,18 +25,11 @@ export default function ServiceEdge({
 
   const edgeData = data as { status?: string; protocol?: string; animated?: boolean } | undefined;
 
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'critical':
-        return '#ef4444';
-      case 'degraded':
-        return '#f59e0b';
-      default:
-        return '#10b981';
-    }
-  };
-
-  const edgeColor = getStatusColor(edgeData?.status);
+  const isCritical = edgeData?.status === 'critical';
+  const isDegraded = edgeData?.status === 'degraded';
+  
+  // Green for healthy/normal traffic flow, Red for harm/risk/critical, Amber-red for degraded
+  const edgeColor = isCritical ? '#ef4444' : isDegraded ? '#f87171' : '#22c55e';
   const isAnimated = edgeData?.animated !== false;
 
   return (
@@ -46,34 +39,26 @@ export default function ServiceEdge({
         markerEnd={markerEnd}
         style={{
           ...style,
-          strokeWidth: edgeData?.status === 'critical' ? 3 : 2,
+          strokeWidth: isCritical ? 2.5 : 2,
           stroke: edgeColor,
-          opacity: 0.8,
-          strokeDasharray: isAnimated ? '5, 5' : 'none',
-          animation: isAnimated ? 'flow 20s linear infinite' : 'none',
+          opacity: isCritical ? 0.95 : 0.85,
+          strokeDasharray: '4 4',
+          animation: isAnimated ? 'dashdraw 1.2s linear infinite' : 'none',
         }}
       />
       {edgeData?.protocol && (
         <foreignObject
-          width={60}
+          width={56}
           height={20}
-          x={labelX - 30}
+          x={labelX - 28}
           y={labelY - 10}
           requiredExtensions="http://www.w3.org/1999/xhtml"
         >
-          <div className="flex h-full w-full items-center justify-center font-mono bg-slate-900/80 rounded px-1 text-[10px] border border-slate-700 text-slate-300 backdrop-blur">
+          <div className="flex h-full w-full items-center justify-center font-mono bg-black/90 rounded border border-white/15 text-[9px] text-neutral-300 backdrop-blur-xs select-none shadow-xs">
             {edgeData.protocol}
           </div>
         </foreignObject>
       )}
-      <style>
-        {`
-          @keyframes flow {
-            from { stroke-dashoffset: 100; }
-            to { stroke-dashoffset: 0; }
-          }
-        `}
-      </style>
     </>
   );
 }
