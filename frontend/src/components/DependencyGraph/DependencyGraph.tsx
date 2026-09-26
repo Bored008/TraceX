@@ -14,7 +14,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import ServiceNode from './ServiceNode';
+import ServiceNode, { type ServiceNodeData } from './ServiceNode';
 import { getLayoutedElements } from './graph-layout';
 import { ServiceInfo } from '@/types';
 import { SERVICE_CONFIG, SERVICE_DEPENDENCIES } from '@/lib/constants';
@@ -25,6 +25,7 @@ interface DependencyGraphProps {
   affectedServiceIds?: string[];
 }
 
+// Important: Must be defined outside the component to avoid re-creating on every render
 const nodeTypes: NodeTypes = {
   service: ServiceNode,
 };
@@ -34,9 +35,9 @@ export default function DependencyGraph({
   rootCauseServiceId, 
   affectedServiceIds = [] 
 }: DependencyGraphProps) {
+  // Compute DAG positions and node/edge data synchronously with useMemo
   const { nodes, edges } = useMemo(() => {
-    // Generate nodes from SERVICE_CONFIG and provided services data
-    const initialNodes: Node[] = Object.entries(SERVICE_CONFIG).map(([id, config]) => {
+    const rawNodes: Node<ServiceNodeData>[] = Object.entries(SERVICE_CONFIG).map(([id, config]) => {
       const serviceData = services.find((s) => s.id === id);
       const isRootCause = id === rootCauseServiceId;
       const isAffected = affectedServiceIds.includes(id);
@@ -62,7 +63,7 @@ export default function DependencyGraph({
       };
     });
 
-    const initialEdges: Edge[] = SERVICE_DEPENDENCIES.map((dep) => {
+    const rawEdges: Edge[] = SERVICE_DEPENDENCIES.map((dep) => {
       const sourceServiceData = services.find((s) => s.id === dep.source);
       const targetServiceData = services.find((s) => s.id === dep.target);
       
@@ -85,7 +86,7 @@ export default function DependencyGraph({
       };
     });
 
-    return getLayoutedElements(initialNodes, initialEdges);
+    return getLayoutedElements(rawNodes, rawEdges);
   }, [services, rootCauseServiceId, affectedServiceIds]);
 
   return (
@@ -95,12 +96,16 @@ export default function DependencyGraph({
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
+        fitViewOptions={{ padding: 0.2 }}
         className="bg-slate-950"
         minZoom={0.2}
-        maxZoom={2}
+        maxZoom={1.5}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable={false}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={2} color="#334155" />
-        <Controls className="bg-slate-900 border-slate-800 fill-slate-300" />
+        <Controls className="bg-slate-900 border-slate-800 fill-slate-300" showInteractive={false} />
         <MiniMap 
           nodeColor={(node) => {
             const data = node.data as { status?: string } | undefined;

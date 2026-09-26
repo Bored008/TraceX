@@ -3,7 +3,7 @@
 import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 
-export interface ServiceNodeData {
+export interface ServiceNodeData extends Record<string, unknown> {
   serviceId: string;
   name: string;
   icon: string;

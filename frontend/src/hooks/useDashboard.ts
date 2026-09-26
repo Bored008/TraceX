@@ -82,111 +82,100 @@ export function useDashboard() {
     }
   }, []);
 
-  // Tick metrics every second
+  // Tick metrics every second without recreating the timer
   useEffect(() => {
-    if (state.services.length === 0) return;
-
     const interval = setInterval(() => {
-      setState((prev) => ({
-        ...prev,
-        services: tickServices(prev.services),
-      }));
+      setState((prev) => {
+        if (prev.services.length === 0) return prev;
+        return {
+          ...prev,
+          services: tickServices(prev.services),
+        };
+      });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [state.services.length]);
+  }, []);
 
   // Inject fault
   const injectFault = useCallback(
     (scenario: ChaosScenario) => {
-      if (state.activeScenario) return;
+      setState((prev) => {
+        if (prev.activeScenario) return prev;
 
-      const fault = simulateFault(scenario);
+        const fault = simulateFault(scenario);
 
-      setState((prev) => ({
-        ...prev,
-        activeScenario: scenario,
-        systemStatus: 'incident',
-      }));
+        // Clear any existing timers
+        faultTimersRef.current.forEach(clearTimeout);
+        faultTimersRef.current = [];
 
-      // Clear any existing timers
-      faultTimersRef.current.forEach(clearTimeout);
-      faultTimersRef.current = [];
+        // Schedule service degradation based on delays
+        fault.affectedServices.forEach((effect, serviceId) => {
+          const timer = setTimeout(() => {
+            setState((current) => {
+              const updatedServices = current.services.map((s) => {
+                if (s.id === serviceId) {
+                  return {
+                    ...s,
+                    status: effect.status,
+                    metrics: {
+                      ...s.metrics,
+                      ...effect.metrics,
+                    },
+                  };
+                }
+                return s;
+              });
 
-      // Add the initial chaos event immediately
-      const chaosEvent = fault.timeline[0];
-      if (chaosEvent) {
-        setState((prev) => ({
-          ...prev,
-          timelineEvents: [...prev.timelineEvents, chaosEvent],
-        }));
-      }
+              const matchingEvent = fault.timeline.find(
+                (e) => e.serviceId === serviceId && e.type === 'anomaly'
+              );
 
-      // Schedule service degradation based on delays
-      fault.affectedServices.forEach((effect, serviceId) => {
-        const timer = setTimeout(() => {
-          setState((prev) => {
-            const updatedServices = prev.services.map((s) => {
-              if (s.id === serviceId) {
-                return {
-                  ...s,
-                  status: effect.status,
-                  metrics: {
-                    ...s.metrics,
-                    ...effect.metrics,
-                  },
-                };
-              }
-              return s;
+              return {
+                ...current,
+                services: updatedServices,
+                timelineEvents: matchingEvent
+                  ? [...current.timelineEvents, { ...matchingEvent, timestamp: Date.now() }]
+                  : current.timelineEvents,
+              };
             });
+          }, effect.delay);
 
-            // Find the matching timeline event for this service
-            const matchingEvent = fault.timeline.find(
-              (e) =>
-                e.serviceId === serviceId &&
-                e.type === 'anomaly'
-            );
+          faultTimersRef.current.push(timer);
+        });
 
-            return {
-              ...prev,
-              services: updatedServices,
-              timelineEvents: matchingEvent
-                ? [
-                    ...prev.timelineEvents,
-                    { ...matchingEvent, timestamp: Date.now() },
-                  ]
-                : prev.timelineEvents,
-            };
-          });
-        }, effect.delay);
+        // Schedule RCA result after all services are affected
+        const maxDelay = Math.max(
+          ...Array.from(fault.affectedServices.values()).map((e) => e.delay)
+        );
+        const rcaTimer = setTimeout(() => {
+          const rcaEvent = fault.timeline.find((e) => e.type === 'rca');
+          setState((current) => ({
+            ...current,
+            rootCauseResult: {
+              ...fault.rcaResult,
+              timestamp: Date.now(),
+            },
+            timelineEvents: rcaEvent
+              ? [...current.timelineEvents, { ...rcaEvent, timestamp: Date.now() }]
+              : current.timelineEvents,
+          }));
+        }, maxDelay + 2000);
 
-        faultTimersRef.current.push(timer);
-      });
+        faultTimersRef.current.push(rcaTimer);
 
-      // Schedule RCA result after all services are affected
-      const maxDelay = Math.max(
-        ...Array.from(fault.affectedServices.values()).map((e) => e.delay)
-      );
-      const rcaTimer = setTimeout(() => {
-        const rcaEvent = fault.timeline.find((e) => e.type === 'rca');
-        setState((prev) => ({
+        const chaosEvent = fault.timeline[0];
+        return {
           ...prev,
-          rootCauseResult: {
-            ...fault.rcaResult,
-            timestamp: Date.now(),
-          },
-          timelineEvents: rcaEvent
-            ? [
-                ...prev.timelineEvents,
-                { ...rcaEvent, timestamp: Date.now() },
-              ]
+          activeScenario: scenario,
+          systemStatus: 'incident',
+          timelineEvents: chaosEvent
+            ? [...prev.timelineEvents, chaosEvent]
             : prev.timelineEvents,
-        }));
-      }, maxDelay + 2000);
-
-      faultTimersRef.current.push(rcaTimer);
+        };
+      });
     },
-    [state.activeScenario]
+    []
   );
 
   // Reset all services
