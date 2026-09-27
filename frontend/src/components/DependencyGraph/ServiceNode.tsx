@@ -25,12 +25,12 @@ export default function ServiceNode({ data }: { data: ServiceNodeData }) {
   const isRootCause = Boolean(data?.isRootCause);
   const isAffected = Boolean(data?.isAffected && !data?.isRootCause);
 
-  // Sharp outlined box with transparent background and low-opacity white border
-  let boxBorder = 'border-white/15 hover:border-white/35 bg-black/75';
+  // Sharp outlined box with dark gray background and low-opacity white border
+  let boxBorder = 'border-white/25 hover:border-white/50 bg-[#1c1c23] shadow-lg';
   if (isRootCause) {
-    boxBorder = 'border-red-500 ring-2 ring-red-500/40 bg-red-950/25 shadow-[0_0_24px_rgba(239,68,68,0.3)]';
+    boxBorder = 'border-red-500 ring-2 ring-red-500/40 bg-[#281316] shadow-[0_0_24px_rgba(239,68,68,0.3)]';
   } else if (isAffected || isHarm) {
-    boxBorder = 'border-red-500/60 bg-red-950/15 shadow-[0_0_15px_rgba(239,68,68,0.15)]';
+    boxBorder = 'border-red-500/60 bg-[#201215] shadow-[0_0_15px_rgba(239,68,68,0.15)]';
   }
 
   // Defensive metric extraction
@@ -45,7 +45,7 @@ export default function ServiceNode({ data }: { data: ServiceNodeData }) {
 
   return (
     <div
-      className={`w-[210px] rounded-lg border ${boxBorder} p-3 shadow-sm backdrop-blur-md transition-all duration-200 select-none`}
+      className={`w-[210px] rounded-xl border ${boxBorder} p-3 shadow-md backdrop-blur-md transition-all duration-200 select-none`}
     >
       <Handle
         type="target"
@@ -56,7 +56,7 @@ export default function ServiceNode({ data }: { data: ServiceNodeData }) {
       {/* Node Header */}
       <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-white/10">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-7 h-7 rounded border border-white/10 bg-white/[0.04] flex items-center justify-center text-sm flex-shrink-0">
+          <div className="w-7 h-7 rounded border border-white/15 bg-white/[0.05] flex items-center justify-center text-sm flex-shrink-0">
             {data?.icon || '📦'}
           </div>
           <div className="min-w-0">
@@ -87,28 +87,28 @@ export default function ServiceNode({ data }: { data: ServiceNodeData }) {
 
       {/* Metrics Grid (Sharp outlined transparent boxes) */}
       <div className="grid grid-cols-2 gap-1.5">
-        <div className="bg-white/[0.02] p-1.5 rounded border border-white/[0.08] flex flex-col">
+        <div className="bg-[#0e0e11] p-1.5 rounded-md border border-white/10 flex flex-col">
           <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-mono font-medium">Latency</span>
           <span className={`font-mono text-xs font-bold ${isLatencyHarm ? 'text-red-400' : 'text-emerald-400'}`}>
             {latency}ms
           </span>
         </div>
 
-        <div className="bg-white/[0.02] p-1.5 rounded border border-white/[0.08] flex flex-col">
+        <div className="bg-[#0e0e11] p-1.5 rounded-md border border-white/10 flex flex-col">
           <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-mono font-medium">Errors</span>
           <span className={`font-mono text-xs font-bold ${isErrorHarm ? 'text-red-400' : 'text-emerald-400'}`}>
             {errorRate}%
           </span>
         </div>
 
-        <div className="bg-white/[0.02] p-1.5 rounded border border-white/[0.08] flex flex-col">
+        <div className="bg-[#0e0e11] p-1.5 rounded-md border border-white/10 flex flex-col">
           <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-mono font-medium">Req/s</span>
           <span className="font-mono text-xs font-bold text-white">
             {throughput}
           </span>
         </div>
 
-        <div className="bg-white/[0.02] p-1.5 rounded border border-white/[0.08] flex flex-col">
+        <div className="bg-[#0e0e11] p-1.5 rounded-md border border-white/10 flex flex-col">
           <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-mono font-medium">CPU</span>
           <span className={`font-mono text-xs font-bold ${isCpuHarm ? 'text-red-400' : 'text-emerald-400'}`}>
             {cpu}%

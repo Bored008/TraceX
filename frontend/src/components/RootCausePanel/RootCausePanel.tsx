@@ -12,7 +12,7 @@ interface RootCausePanelProps {
 export default function RootCausePanel({ result }: RootCausePanelProps) {
   if (!result) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 bg-white/[0.02] backdrop-blur-md rounded-lg border border-white/10 h-full min-h-[220px] text-center">
+      <div className="flex flex-col items-center justify-center p-8 bg-[#16161b] rounded-xl border border-white/20 h-full min-h-[220px] text-center shadow-md">
         <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-3 border border-emerald-500/20">
           <CheckCircle2 className="w-5 h-5 text-emerald-400" />
         </div>
@@ -25,7 +25,7 @@ export default function RootCausePanel({ result }: RootCausePanelProps) {
   }
 
   return (
-    <div className="bg-red-950/10 backdrop-blur-md rounded-lg border border-red-500/40 p-5 shadow-lg relative overflow-hidden">
+    <div className="bg-[#221215] rounded-xl border border-red-500/50 p-5 shadow-xl relative overflow-hidden">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -56,7 +56,7 @@ export default function RootCausePanel({ result }: RootCausePanelProps) {
       </div>
 
       {/* Causal Explanation Box */}
-      <div className="bg-black/60 rounded border border-white/10 p-3.5">
+      <div className="bg-[#0e0e11] rounded-lg border border-white/10 p-3.5">
         <h4 className="text-xs font-mono text-neutral-300 uppercase tracking-wider mb-1 flex items-center gap-1.5 font-bold">
           <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
           Causal Diagnosis

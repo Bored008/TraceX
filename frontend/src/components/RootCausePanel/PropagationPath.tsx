@@ -27,7 +27,7 @@ export default function PropagationPath({ steps, rootCauseServiceId }: Propagati
             <div key={index} className="flex gap-2.5 items-start">
               <div className="relative flex flex-col items-center z-10 pt-1">
                 <div
-                  className={`w-7 h-7 rounded border flex items-center justify-center bg-black ${
+                  className={`w-7 h-7 rounded border flex items-center justify-center bg-[#16161b] ${
                     isRoot ? 'border-red-500 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'border-white/15 text-neutral-400'
                   }`}
                 >
@@ -35,7 +35,7 @@ export default function PropagationPath({ steps, rootCauseServiceId }: Propagati
                 </div>
               </div>
               
-              <div className="flex-1 bg-white/[0.02] rounded border border-white/10 p-2.5 text-xs">
+              <div className="flex-1 bg-[#0e0e11] rounded-lg border border-white/10 p-2.5 text-xs shadow-xs">
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center space-x-1.5 font-mono">
                     <span className={isRoot ? 'text-red-400 font-bold' : 'text-neutral-300'}>{sourceName}</span>

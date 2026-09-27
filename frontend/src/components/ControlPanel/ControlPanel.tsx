@@ -19,7 +19,7 @@ export default function ControlPanel({
   activeScenario,
 }: ControlPanelProps) {
   return (
-    <div className="bg-white/[0.02] backdrop-blur-md rounded-lg border border-white/10 p-5 select-none">
+    <div className="bg-[#16161b] rounded-xl border border-white/20 p-5 select-none shadow-xl">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-white/10">
         <div>
           <h3 className="text-base font-bold text-white tracking-tight">
@@ -38,7 +38,7 @@ export default function ControlPanel({
             ${
               isActive
                 ? 'border border-emerald-500 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 shadow-[0_0_15px_rgba(34,197,94,0.3)] cursor-pointer'
-                : 'border border-white/10 bg-white/[0.01] text-neutral-600 cursor-not-allowed'
+                : 'border border-white/10 bg-[#202027] text-neutral-500 cursor-not-allowed'
             }
           `}
         >
@@ -58,13 +58,13 @@ export default function ControlPanel({
               onClick={() => onInjectFault(scenario.id)}
               disabled={isDisabled}
               className={`
-                p-3.5 rounded-lg border text-left transition-all duration-200 flex flex-col justify-between min-h-[92px]
+                p-3.5 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between min-h-[92px]
                 ${
                   isScenarioActive
-                    ? 'border-red-500 bg-red-950/20 text-red-200 shadow-[0_0_20px_rgba(239,68,68,0.25)] ring-1 ring-red-500/50'
+                    ? 'border-red-500 bg-[#251215] text-red-200 shadow-[0_0_20px_rgba(239,68,68,0.25)] ring-1 ring-red-500/50'
                     : isDisabled
-                    ? 'border-white/5 bg-transparent opacity-35 cursor-not-allowed'
-                    : 'border-white/10 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.05] cursor-pointer text-white'
+                    ? 'border-white/5 bg-[#121216] opacity-35 cursor-not-allowed'
+                    : 'border-white/20 bg-[#202027] hover:border-white/40 hover:bg-[#272732] cursor-pointer text-white shadow-xs'
                 }
               `}
             >

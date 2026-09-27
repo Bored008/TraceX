@@ -19,7 +19,7 @@ export default function IncidentTimeline({ events }: IncidentTimelineProps) {
 
   if (!events || events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center w-full min-h-[12rem] bg-white/[0.01] rounded-lg border border-dashed border-white/10 p-4">
+      <div className="flex flex-col items-center justify-center w-full min-h-[12rem] bg-[#0e0e11] rounded-xl border border-dashed border-white/15 p-4">
         <Clock className="w-6 h-6 text-neutral-600 mb-2" />
         <p className="text-neutral-500 text-xs font-mono">No events logged in buffer</p>
       </div>
@@ -54,7 +54,7 @@ export default function IncidentTimeline({ events }: IncidentTimelineProps) {
   return (
     <div
       ref={scrollRef}
-      className="bg-black/60 rounded-lg border border-white/10 p-3.5 max-h-[340px] overflow-y-auto font-mono"
+      className="bg-[#0e0e11] rounded-xl border border-white/10 p-3.5 max-h-[340px] overflow-y-auto font-mono"
     >
       <div className="relative border-l border-white/10 ml-2 space-y-4 pb-1 mt-1">
         {events.map((event, index) => {

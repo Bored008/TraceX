@@ -15,7 +15,7 @@ const AIExplanation: React.FC<AIExplanationProps> = ({
   isLoading = false,
 }) => {
   return (
-    <div className="bg-white/[0.02] backdrop-blur-md rounded-lg border border-white/10 p-5 text-white font-sans">
+    <div className="bg-[#16161b] rounded-xl border border-white/20 p-5 text-white font-sans shadow-md">
       <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
         <div className="flex items-center space-x-2.5">
           <div className="w-7 h-7 rounded border border-white/15 bg-white/[0.04] flex items-center justify-center">
@@ -50,7 +50,7 @@ const AIExplanation: React.FC<AIExplanationProps> = ({
               <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
               Observed Failure Mechanism
             </h4>
-            <div className="bg-black/60 p-3.5 rounded border border-white/10 text-neutral-300 text-xs font-mono leading-relaxed whitespace-pre-wrap">
+            <div className="bg-[#0e0e11] p-3.5 rounded-lg border border-white/10 text-neutral-300 text-xs font-mono leading-relaxed whitespace-pre-wrap">
               {explanation || 'No anomalies currently detected across service topology.'}
             </div>
           </div>

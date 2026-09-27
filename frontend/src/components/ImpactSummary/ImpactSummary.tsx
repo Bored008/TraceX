@@ -17,7 +17,7 @@ const ImpactSummary: React.FC<ImpactSummaryProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {/* Affected Services */}
-      <div className="bg-white/[0.02] backdrop-blur-md rounded-lg border border-white/10 p-4 flex items-center">
+      <div className="bg-[#16161b] rounded-xl border border-white/20 p-4 flex items-center shadow-md">
         <div className="w-10 h-10 rounded border border-red-500/30 bg-red-500/10 flex items-center justify-center mr-3 flex-shrink-0">
           <Server className="w-4 h-4 text-red-400" />
         </div>
@@ -33,7 +33,7 @@ const ImpactSummary: React.FC<ImpactSummaryProps> = ({
       </div>
 
       {/* Affected Users */}
-      <div className="bg-white/[0.02] backdrop-blur-md rounded-lg border border-white/10 p-4 flex items-center">
+      <div className="bg-[#16161b] rounded-xl border border-white/20 p-4 flex items-center shadow-md">
         <div className="w-10 h-10 rounded border border-white/15 bg-white/[0.04] flex items-center justify-center mr-3 flex-shrink-0">
           <Users className="w-4 h-4 text-neutral-300" />
         </div>

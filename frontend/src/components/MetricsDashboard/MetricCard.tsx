@@ -18,7 +18,7 @@ export default function MetricCard({ title, value, unit, data, status, icon }: M
   const isHarm = status !== 'normal';
 
   return (
-    <div className={`p-3.5 rounded-lg border ${isHarm ? 'border-red-500/40 bg-red-950/10' : 'border-white/10 bg-white/[0.02]'} backdrop-blur-md flex flex-col h-32 transition-all`}>
+    <div className={`p-3.5 rounded-xl border ${isHarm ? 'border-red-500/50 bg-[#241316]' : 'border-white/20 bg-[#202027]'} shadow-sm flex flex-col h-32 transition-all`}>
       <div className="flex justify-between items-center mb-1">
         <div className="flex items-center gap-2 text-neutral-400 font-mono text-xs font-medium">
           <span className={isHarm ? 'text-red-400' : 'text-neutral-400'}>{icon}</span>

@@ -138,22 +138,22 @@ export default function DependencyGraph({
   }, [services]);
 
   return (
-    <div className="w-full h-full bg-black">
+    <div className="w-full h-full bg-[#0e0e11]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
         fitViewOptions={{ padding: 0.15 }}
-        className="bg-black"
+        className="bg-[#0e0e11]"
         minZoom={0.1}
         maxZoom={1.5}
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
       >
-        <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#262626" />
-        <Controls className="bg-black/90 border-white/10 fill-neutral-300" />
+        <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#2b2b32" />
+        <Controls className="bg-[#141418]/95 border-white/20 fill-neutral-300 rounded-lg overflow-hidden shadow-lg" />
         <MiniMap 
           nodeColor={(node) => {
             const data = node.data as { status?: string } | undefined;
@@ -161,10 +161,10 @@ export default function DependencyGraph({
             if (status === 'critical' || status === 'degraded' || status === 'down') return '#ef4444';
             return '#22c55e';
           }}
-          maskColor="rgba(0, 0, 0, 0.85)"
-          className="bg-black/90 border border-white/10"
+          maskColor="rgba(14, 14, 17, 0.85)"
+          className="bg-[#141418]/95 border border-white/20 rounded-lg shadow-lg"
         />
-        <Panel position="top-right" className="bg-black/80 p-3 rounded-lg border border-white/10 backdrop-blur-md shadow-lg">
+        <Panel position="top-right" className="bg-[#141418]/95 p-3.5 rounded-xl border border-white/20 backdrop-blur-md shadow-xl">
           <h4 className="text-white font-mono text-[10px] uppercase tracking-wider mb-2 font-semibold">
             Status Legend
           </h4>

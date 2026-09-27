@@ -12,7 +12,7 @@ interface MetricsGridProps {
 export default function MetricsGrid({ service }: MetricsGridProps) {
   if (!service) {
     return (
-      <div className="flex flex-col items-center justify-center w-full min-h-[10rem] rounded-lg border border-dashed border-white/10 bg-white/[0.01] p-6 text-center">
+      <div className="flex flex-col items-center justify-center w-full min-h-[10rem] rounded-xl border border-dashed border-white/15 bg-[#0e0e11] p-6 text-center">
         <Activity className="w-6 h-6 text-neutral-600 mb-2" />
         <p className="text-neutral-500 text-xs font-mono">
           Click any microservice node in the topology above to inspect live telemetry
