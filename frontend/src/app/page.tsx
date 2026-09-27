@@ -33,6 +33,7 @@ export default function DashboardPage() {
     timelineEvents,
     selectedService,
     activeScenario,
+    activeScenarios,
     systemStatus,
     isBackendConnected,
     injectFault,
@@ -87,6 +88,7 @@ export default function DashboardPage() {
               <DependencyGraph
                 services={services}
                 rootCauseServiceId={rootCauseResult?.rootCause.serviceId}
+                rootCauseServiceIds={rootCauseResult?.secondaryRootCauseIds || []}
                 affectedServiceIds={rootCauseResult?.affectedServices}
               />
             </div>
@@ -190,8 +192,9 @@ export default function DashboardPage() {
           <ControlPanel
             onInjectFault={injectFault}
             onReset={resetServices}
-            isActive={activeScenario !== null}
+            isActive={activeScenarios.length > 0}
             activeScenario={activeScenario}
+            activeScenarios={activeScenarios}
           />
         </section>
       </main>

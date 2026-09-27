@@ -22,6 +22,7 @@ import { SERVICE_CONFIG, SERVICE_DEPENDENCIES } from '@/lib/constants';
 interface DependencyGraphProps {
   services?: ServiceInfo[];
   rootCauseServiceId?: string;
+  rootCauseServiceIds?: string[];
   affectedServiceIds?: string[];
 }
 
@@ -32,6 +33,7 @@ const nodeTypes: NodeTypes = {
 export default function DependencyGraph({ 
   services = [], 
   rootCauseServiceId, 
+  rootCauseServiceIds = [],
   affectedServiceIds = [] 
 }: DependencyGraphProps) {
   // Memoize layouted node positions once
@@ -74,8 +76,10 @@ export default function DependencyGraph({
   const nodes: Node<ServiceNodeData>[] = useMemo(() => {
     return Object.entries(SERVICE_CONFIG).map(([id, config]) => {
       const serviceData = services.find((s) => s.id === id);
-      const isUnhealthy = serviceData?.status === 'degraded' || serviceData?.status === 'critical';
-      const isRootCause = id === rootCauseServiceId && (isUnhealthy || !serviceData);
+      const isUnhealthy = serviceData?.status === 'degraded' || serviceData?.status === 'critical' || serviceData?.status === 'down';
+      const isRootCause =
+        (id === rootCauseServiceId || (rootCauseServiceIds && rootCauseServiceIds.includes(id))) &&
+        (isUnhealthy || !serviceData);
       const isAffected = affectedServiceIds.includes(id) && (isUnhealthy || !serviceData);
 
       return {

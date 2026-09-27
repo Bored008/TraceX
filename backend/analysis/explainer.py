@@ -53,6 +53,7 @@ class GeminiExplainer:
 
 Incident Telemetry Context:
 - Root Cause Service: {rca.root_cause_service}
+- Concurrent Secondary Root Causes: {', '.join(rca.secondary_root_causes) if getattr(rca, 'secondary_root_causes', None) else 'None (Single-point incident)'}
 - Confidence Score: {rca.confidence}%
 - Primary Fault Metric: {rca.primary_metric} reached {rca.anomaly_value} (normal baseline: {rca.baseline_value})
 - Self-Time Bottleneck: {rca.self_time_ms}ms
@@ -61,7 +62,7 @@ Incident Telemetry Context:
 - Inferred Missing Telemetry Links: {', '.join(rca.inferred_missing_services) if rca.inferred_missing_services else 'None'}
 
 Return a valid JSON object with EXACTLY three fields:
-1. "summary": A crisp 2-3 sentence executive technical summary explaining what happened and why.
+1. "summary": A crisp 2-3 sentence executive technical summary explaining what happened and why (highlighting compound/multiple root causes if present).
 2. "causal_chain": Step-by-step description of how the failure propagated through the dependencies.
 3. "suggested_fix": Concrete engineering remediation (e.g. pool sizing, circuit breakers, backpressure, retries).
 
@@ -91,6 +92,23 @@ Respond with ONLY the JSON object."""
         base = rca.baseline_value
 
         prop_str = " ➔ ".join([s.service_name for s in propagation.steps])
+
+        # Multi-root cause compound failure handling
+        if getattr(rca, "secondary_root_causes", None):
+            sec_str = ", ".join(rca.secondary_root_causes)
+            summary = (
+                f"Multi-Point Compound Outage: Primary root cause identified at {svc} ({metric}: {val}), "
+                f"with concurrent independent failure detected at {sec_str}. "
+                f"Both failure domains simultaneously degraded {impact.affected_services_count} microservices in the mesh."
+            )
+            causal_chain = f"Dual Propagation Cascades: [Path A: {prop_str}] + [Path B: {sec_str} subsystem failure]. API Gateway suffered simultaneous 504 timeouts and authorization rejection."
+            suggested_fix = f"Parallel Incident Remediation: Remediate {svc} resource starvation while isolating/restarting {sec_str} instances to restore normal telemetry."
+            return IncidentExplanation(
+                summary=summary,
+                causal_chain=causal_chain,
+                suggested_fix=suggested_fix,
+                model_used="Template Multi-Incident Engine"
+            )
 
         # Tailored knowledge base heuristics for known scenarios
         if "db" in svc or "postgres" in svc:

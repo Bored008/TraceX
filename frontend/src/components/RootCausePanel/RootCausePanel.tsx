@@ -30,10 +30,14 @@ export default function RootCausePanel({ result }: RootCausePanelProps) {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 font-medium">
-              Root Cause Identification
+              {result.secondaryRootCauses && result.secondaryRootCauses.length > 0
+                ? 'Multi-Point Root Causes'
+                : 'Root Cause Identification'}
             </span>
             <span className="px-2 py-0.5 text-[10px] font-mono font-bold tracking-wider rounded border border-red-500/40 bg-red-500/20 text-red-400">
-              {result.severity.toUpperCase()} RISK
+              {result.secondaryRootCauses && result.secondaryRootCauses.length > 0
+                ? 'COMPOUND CRITICAL'
+                : `${result.severity.toUpperCase()} RISK`}
             </span>
           </div>
 
@@ -43,6 +47,23 @@ export default function RootCausePanel({ result }: RootCausePanelProps) {
               {result.rootCause.serviceName}
             </h2>
           </div>
+
+          {result.secondaryRootCauses && result.secondaryRootCauses.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider">
+                Concurrent Root:
+              </span>
+              {result.secondaryRootCauses.map((sec) => (
+                <span
+                  key={sec.serviceId}
+                  className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-red-500/25 text-red-300 border border-red-500/50 flex items-center gap-1"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
+                  {sec.serviceName}
+                </span>
+              ))}
+            </div>
+          )}
 
           <p className="text-xs text-red-300 font-mono font-medium mt-1">
             Origin: {result.rootCause.description}

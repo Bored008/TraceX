@@ -2,7 +2,7 @@ import time
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
-from .websocket import broadcast_chaos_injected, broadcast_chaos_reset
+from .websocket import broadcast_chaos_injected, broadcast_chaos_updated, broadcast_chaos_reset
 
 router = APIRouter(prefix="/api")
 
@@ -149,16 +149,49 @@ async def get_chaos_scenarios(request: Request):
     app_state = request.app.state
     return app_state.digital_twin.fault_injector.scenarios_info
 
+@router.get("/chaos/active")
+async def get_active_chaos(request: Request):
+    app_state = request.app.state
+    active_faults = app_state.digital_twin.fault_injector.get_active_faults()
+    return {
+        "active": len(active_faults) > 0,
+        "activeScenarios": [f.scenario.value for f in active_faults],
+        "faults": [f.model_dump() for f in active_faults]
+    }
+
 @router.post("/chaos/inject")
 async def inject_chaos(req: ChaosInjectRequest, request: Request):
     app_state = request.app.state
     try:
         fault = app_state.digital_twin.inject_fault(req.scenario)
+        active_scenarios = [f.scenario.value for f in app_state.digital_twin.fault_injector.get_active_faults()]
         await broadcast_chaos_injected(req.scenario, fault.target_service)
+        await broadcast_chaos_updated(active_scenarios)
         return {
             "status": "injected",
             "scenario": req.scenario,
+            "activeScenarios": active_scenarios,
             "fault": fault.model_dump()
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/chaos/stop")
+async def stop_chaos(req: ChaosInjectRequest, request: Request):
+    app_state = request.app.state
+    try:
+        app_state.digital_twin.fault_injector.remove_fault(req.scenario)
+        active_scenarios = [f.scenario.value for f in app_state.digital_twin.fault_injector.get_active_faults()]
+        if not active_scenarios:
+            app_state.digital_twin.reset()
+            app_state.recent_anomalies.clear()
+            await broadcast_chaos_reset()
+        else:
+            await broadcast_chaos_updated(active_scenarios)
+        return {
+            "status": "stopped",
+            "scenario": req.scenario,
+            "activeScenarios": active_scenarios
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

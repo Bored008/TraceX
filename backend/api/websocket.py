@@ -41,5 +41,8 @@ async def broadcast_rca(rca_payload: Dict[str, Any]):
 async def broadcast_chaos_injected(scenario: str, target: str):
     await sio.emit("chaos:injected", {"scenario": scenario, "target": target})
 
+async def broadcast_chaos_updated(active_scenarios: list):
+    await sio.emit("chaos:updated", {"activeScenarios": active_scenarios})
+
 async def broadcast_chaos_reset():
     await sio.emit("chaos:reset", {})

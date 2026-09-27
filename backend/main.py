@@ -132,6 +132,15 @@ async def simulation_and_analysis_worker(app: FastAPI):
 
                         rc_name = SERVICE_DEFINITIONS.get(rca_res.root_cause_service, {}).get("name", rca_res.root_cause_service)
 
+                        secondary_roots = []
+                        for sec_id in getattr(rca_res, "secondary_root_causes", []):
+                            sec_name = SERVICE_DEFINITIONS.get(sec_id, {}).get("name", sec_id)
+                            secondary_roots.append({
+                                "serviceId": sec_id,
+                                "serviceName": sec_name,
+                                "description": f"Concurrent independent failure at {sec_name}"
+                            })
+
                         incident_payload = {
                             "id": f"inc-{int(loop_start)}-{rca_res.root_cause_service}",
                             "timestamp": int(loop_start * 1000),
@@ -144,6 +153,8 @@ async def simulation_and_analysis_worker(app: FastAPI):
                                 "value": rca_res.anomaly_value,
                                 "baseline": rca_res.baseline_value
                             },
+                            "secondaryRootCauses": secondary_roots,
+                            "secondaryRootCauseIds": getattr(rca_res, "secondary_root_causes", []),
                             "propagationPath": frontend_prop_path,
                             "affectedServices": rca_res.affected_services,
                             "affectedUsers": impact.estimated_affected_users,

@@ -47,11 +47,24 @@ class ApiClient {
   }
 
   // Inject a chaos scenario
-  async injectChaos(scenario: ChaosScenario): Promise<{ status: string; scenario: string }> {
+  async injectChaos(scenario: ChaosScenario): Promise<{ status: string; scenario: string; activeScenarios?: string[] }> {
     return this.request('/api/chaos/inject', {
       method: 'POST',
       body: JSON.stringify({ scenario }),
     });
+  }
+
+  // Stop/remove a specific chaos scenario while keeping others running
+  async stopChaos(scenario: ChaosScenario): Promise<{ status: string; scenario: string; activeScenarios?: string[] }> {
+    return this.request('/api/chaos/stop', {
+      method: 'POST',
+      body: JSON.stringify({ scenario }),
+    });
+  }
+
+  // Get list of active chaos scenarios
+  async getActiveChaos(): Promise<{ active: boolean; activeScenarios: string[] }> {
+    return this.request('/api/chaos/active');
   }
 
   // Reset all services to healthy

@@ -19,6 +19,7 @@ class RCAResult(BaseModel):
     affected_services: List[str]
     symptom_services: List[str]
     inferred_missing_services: List[str] = Field(default_factory=list)
+    secondary_root_causes: List[str] = Field(default_factory=list)
     node_scores: Dict[str, float] = Field(default_factory=dict)
     summary: str
 
@@ -175,9 +176,17 @@ class MicroRCAEngine:
 
         # Root cause is service with highest combined score
         root_cause_service = max(final_scores, key=final_scores.get)
+        top_score = final_scores[root_cause_service]
+
+        # Detect concurrent independent root causes (multi-crash / compound incidents)
+        secondary_root_causes = []
+        for svc, score in sorted(final_scores.items(), key=lambda x: x[1], reverse=True):
+            if svc != root_cause_service and score >= 0.35 * top_score and node_scores.get(svc, 0.0) >= 0.35:
+                # Check if svc is topologically independent (root_cause does not flow into svc)
+                if not nx.has_path(self.graph_store.graph, root_cause_service, svc):
+                    secondary_root_causes.append(svc)
 
         # Confidence calculation
-        top_score = final_scores[root_cause_service]
         sum_scores = sum(final_scores.values()) or 1.0
         relative_ratio = top_score / sum_scores
 
@@ -191,10 +200,16 @@ class MicroRCAEngine:
         rc_anomalies = anomalies_by_svc[root_cause_service]
         primary_anomaly = max(rc_anomalies, key=lambda a: a.z_score)
 
-        summary = (
-            f"Root cause identified as {root_cause_service} with {base_confidence:.1f}% confidence. "
-            f"{primary_anomaly.description}."
-        )
+        if secondary_root_causes:
+            summary = (
+                f"Multi-Point Compound Incident: Primary root cause is {root_cause_service} ({base_confidence:.1f}% confidence), "
+                f"with concurrent independent failure detected at {', '.join(secondary_root_causes)}."
+            )
+        else:
+            summary = (
+                f"Root cause identified as {root_cause_service} with {base_confidence:.1f}% confidence. "
+                f"{primary_anomaly.description}."
+            )
 
         return RCAResult(
             id=f"rca-{int(time.time())}-{root_cause_service}",
@@ -208,6 +223,7 @@ class MicroRCAEngine:
             affected_services=anomalous_service_ids,
             symptom_services=symptom_nodes,
             inferred_missing_services=inferred_missing_services,
+            secondary_root_causes=secondary_root_causes,
             node_scores={k: round(v, 4) for k, v in final_scores.items()},
             summary=summary
         )

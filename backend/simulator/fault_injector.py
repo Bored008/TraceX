@@ -73,6 +73,9 @@ class FaultInjector:
         self.active_faults[scenario.value] = fault
         return fault
 
+    def remove_fault(self, scenario_type: str) -> Optional[FaultState]:
+        return self.active_faults.pop(scenario_type, None)
+
     def reset(self):
         self.active_faults.clear()
 

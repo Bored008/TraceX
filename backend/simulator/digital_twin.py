@@ -19,6 +19,9 @@ class DigitalTwin:
     def inject_fault(self, scenario: str) -> FaultState:
         return self.fault_injector.inject(scenario)
 
+    def remove_fault(self, scenario: str) -> Optional[FaultState]:
+        return self.fault_injector.remove_fault(scenario)
+
     def tick(self) -> TelemetryBatch:
         now = time.time()
         batch_metrics: Dict[str, dict] = {}

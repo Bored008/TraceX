@@ -25,6 +25,7 @@ interface DashboardState {
   selectedServiceId: string | null;
   isBackendConnected: boolean;
   activeScenario: ChaosScenario | null;
+  activeScenarios: ChaosScenario[];
   systemStatus: 'healthy' | 'incident';
 }
 
@@ -44,6 +45,7 @@ export function useDashboard() {
     selectedServiceId: null,
     isBackendConnected: false,
     activeScenario: null,
+    activeScenarios: [],
     systemStatus: 'healthy',
   }));
 
@@ -125,6 +127,7 @@ export function useDashboard() {
               services: data.services,
               rootCauseResult: null,
               activeScenario: null,
+              activeScenarios: [],
               systemStatus: 'healthy',
               timelineEvents: [...prev.timelineEvents.slice(-40), recoveryEvent],
             };
@@ -173,6 +176,8 @@ export function useDashboard() {
           value: 4000,
           baseline: 15,
         },
+        secondaryRootCauses: incident.secondaryRootCauses || [],
+        secondaryRootCauseIds: incident.secondaryRootCauseIds || [],
         propagationPath: incident.propagationPath || [],
         affectedServices: incident.affectedServices || [],
         affectedUsers: incident.affectedUsers || 1200,
@@ -216,11 +221,29 @@ export function useDashboard() {
     };
 
     const onChaosInjected = (data: { scenario: ChaosScenario; target?: string }) => {
-      setState((prev) => ({
-        ...prev,
-        activeScenario: data.scenario,
-        systemStatus: 'incident',
-      }));
+      setState((prev) => {
+        const nextList = prev.activeScenarios.includes(data.scenario)
+          ? prev.activeScenarios
+          : [...prev.activeScenarios, data.scenario];
+        return {
+          ...prev,
+          activeScenario: data.scenario,
+          activeScenarios: nextList,
+          systemStatus: 'incident',
+        };
+      });
+    };
+
+    const onChaosUpdated = (data: { activeScenarios: ChaosScenario[] }) => {
+      setState((prev) => {
+        const nextList = Array.isArray(data.activeScenarios) ? data.activeScenarios : [];
+        return {
+          ...prev,
+          activeScenarios: nextList,
+          activeScenario: nextList.length > 0 ? nextList[nextList.length - 1] : null,
+          systemStatus: nextList.length > 0 ? 'incident' : (prev.rootCauseResult ? 'incident' : 'healthy'),
+        };
+      });
     };
 
     const onChaosReset = () => {
@@ -237,6 +260,7 @@ export function useDashboard() {
           ...prev,
           rootCauseResult: null,
           activeScenario: null,
+          activeScenarios: [],
           systemStatus: 'healthy',
           timelineEvents: [...prev.timelineEvents.slice(-40), recoveryEvent],
         };
@@ -250,6 +274,7 @@ export function useDashboard() {
     socket.on('rca:completed', onRcaCompleted);
     socket.on('incident:created', onRcaCompleted);
     socket.on('chaos:injected', onChaosInjected);
+    socket.on('chaos:updated', onChaosUpdated);
     socket.on('chaos:reset', onChaosReset);
 
     return () => {
@@ -260,6 +285,7 @@ export function useDashboard() {
       socket.off('rca:completed', onRcaCompleted);
       socket.off('incident:created', onRcaCompleted);
       socket.off('chaos:injected', onChaosInjected);
+      socket.off('chaos:updated', onChaosUpdated);
       socket.off('chaos:reset', onChaosReset);
       socket.disconnect();
     };
@@ -280,36 +306,95 @@ export function useDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Inject fault
+  // Inject or toggle fault
   const injectFault = useCallback(
     (scenario: ChaosScenario) => {
       setState((prev) => {
-        if (prev.activeScenario) return prev;
+        const isAlreadyActive = prev.activeScenarios.includes(scenario);
 
         // If backend connected, call REST API
         if (isConnectedRef.current) {
-          api.injectChaos(scenario).catch((err) => {
-            console.error('Failed to inject chaos via backend:', err);
-          });
-          return {
-            ...prev,
-            activeScenario: scenario,
-            systemStatus: 'incident',
-            timelineEvents: [
-              ...prev.timelineEvents,
-              {
-                id: `chaos-${Date.now()}`,
-                timestamp: Date.now(),
-                type: 'chaos',
-                title: `Fault Injected: ${scenario}`,
-                description: `Live chaos experiment triggered on backend`,
-                severity: 'HIGH',
-              },
-            ],
-          };
+          if (isAlreadyActive) {
+            api.stopChaos(scenario).catch((err) => {
+              console.error('Failed to stop chaos via backend:', err);
+            });
+            const nextList = prev.activeScenarios.filter((s) => s !== scenario);
+            return {
+              ...prev,
+              activeScenarios: nextList,
+              activeScenario: nextList.length > 0 ? nextList[nextList.length - 1] : null,
+              systemStatus: nextList.length > 0 ? 'incident' : 'healthy',
+              timelineEvents: [
+                ...prev.timelineEvents,
+                {
+                  id: `chaos-stop-${Date.now()}`,
+                  timestamp: Date.now(),
+                  type: 'info',
+                  title: `Fault Deactivated: ${scenario.replace('_', ' ')}`,
+                  description: `Removed from active fault cluster. Remaining active: ${nextList.length}`,
+                },
+              ],
+            };
+          } else {
+            api.injectChaos(scenario).catch((err) => {
+              console.error('Failed to inject chaos via backend:', err);
+            });
+            const nextList = [...prev.activeScenarios, scenario];
+            return {
+              ...prev,
+              activeScenarios: nextList,
+              activeScenario: scenario,
+              systemStatus: 'incident',
+              timelineEvents: [
+                ...prev.timelineEvents,
+                {
+                  id: `chaos-${Date.now()}`,
+                  timestamp: Date.now(),
+                  type: 'chaos',
+                  title: `Fault Injected: ${scenario.replace('_', ' ')}`,
+                  description: `Added to active fault cluster (${nextList.length} simultaneous faults)`,
+                  severity: 'HIGH',
+                },
+              ],
+            };
+          }
         }
 
         // Fallback: local simulation
+        if (isAlreadyActive) {
+          const nextList = prev.activeScenarios.filter((s) => s !== scenario);
+          if (nextList.length === 0) {
+            faultTimersRef.current.forEach(clearTimeout);
+            faultTimersRef.current = [];
+            return {
+              ...prev,
+              services: generateInitialServices(),
+              rootCauseResult: null,
+              activeScenario: null,
+              activeScenarios: [],
+              systemStatus: 'healthy',
+              timelineEvents: [
+                ...prev.timelineEvents,
+                {
+                  id: `chaos-stop-${Date.now()}`,
+                  timestamp: Date.now(),
+                  type: 'recovery',
+                  title: 'All Faults Cleared',
+                  description: 'Local services restored to safe baseline',
+                },
+              ],
+            };
+          }
+          const remainingFault = simulateFault(nextList[nextList.length - 1]);
+          return {
+            ...prev,
+            activeScenarios: nextList,
+            activeScenario: nextList[nextList.length - 1],
+            rootCauseResult: remainingFault.rcaResult,
+          };
+        }
+
+        const nextList = [...prev.activeScenarios, scenario];
         const fault = simulateFault(scenario);
 
         // Clear existing timers
@@ -355,16 +440,30 @@ export function useDashboard() {
         );
         const rcaTimer = setTimeout(() => {
           const rcaEvent = fault.timeline.find((e) => e.type === 'rca');
-          setState((current) => ({
-            ...current,
-            rootCauseResult: {
+          setState((current) => {
+            const secondaryRoots = current.activeScenarios
+              .filter((s) => s !== scenario)
+              .map((s) => ({
+                serviceId: s === 'db_overload' ? 'postgres-db' : s === 'auth_crash' ? 'auth-service' : s === 'network_partition' ? 'payment-service' : 'inventory-service',
+                serviceName: s === 'db_overload' ? 'PostgresDB' : s === 'auth_crash' ? 'Auth Service' : s === 'network_partition' ? 'Payment Service' : 'Inventory Service',
+                description: `Concurrent simulated fault: ${s.replace('_', ' ')}`,
+              }));
+
+            const combinedRca: RootCauseResult = {
               ...fault.rcaResult,
               timestamp: Date.now(),
-            },
-            timelineEvents: rcaEvent
-              ? [...current.timelineEvents, { ...rcaEvent, timestamp: Date.now() }]
-              : current.timelineEvents,
-          }));
+              secondaryRootCauses: secondaryRoots,
+              secondaryRootCauseIds: secondaryRoots.map((sr) => sr.serviceId),
+            };
+
+            return {
+              ...current,
+              rootCauseResult: combinedRca,
+              timelineEvents: rcaEvent
+                ? [...current.timelineEvents, { ...rcaEvent, timestamp: Date.now() }]
+                : current.timelineEvents,
+            };
+          });
         }, maxDelay + 2000);
 
         faultTimersRef.current.push(rcaTimer);
@@ -373,6 +472,7 @@ export function useDashboard() {
         return {
           ...prev,
           activeScenario: scenario,
+          activeScenarios: nextList,
           systemStatus: 'incident',
           timelineEvents: chaosEvent
             ? [...prev.timelineEvents, chaosEvent]
@@ -402,6 +502,7 @@ export function useDashboard() {
       services: freshServices,
       rootCauseResult: null,
       activeScenario: null,
+      activeScenarios: [],
       systemStatus: 'healthy',
       timelineEvents: [
         ...prev.timelineEvents,
@@ -432,6 +533,7 @@ export function useDashboard() {
     selectedServiceId: state.selectedServiceId,
     isBackendConnected: state.isBackendConnected,
     activeScenario: state.activeScenario,
+    activeScenarios: state.activeScenarios,
     systemStatus: state.systemStatus,
     injectFault,
     resetServices,

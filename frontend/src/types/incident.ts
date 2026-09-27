@@ -30,6 +30,12 @@ export interface RootCauseResult {
     value: number;
     baseline: number;
   };
+  secondaryRootCauses?: Array<{
+    serviceId: string;
+    serviceName: string;
+    description: string;
+  }>;
+  secondaryRootCauseIds?: string[];
   propagationPath: PropagationStep[];
   affectedServices: string[];
   affectedUsers: number;
