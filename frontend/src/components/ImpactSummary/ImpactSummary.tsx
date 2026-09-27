@@ -22,9 +22,11 @@ const ImpactSummary: React.FC<ImpactSummaryProps> = ({
           <Server className="w-4 h-4 text-red-400" />
         </div>
         <div>
-          <p className="text-neutral-400 text-xs font-mono mb-0.5">Affected Nodes</p>
+          <p className="text-xs font-mono uppercase tracking-wider text-neutral-400 font-semibold mb-0.5">
+            Affected Nodes
+          </p>
           <div className="flex items-baseline space-x-1.5 font-mono">
-            <span className="text-xl font-bold text-red-400">{affectedServices.length}</span>
+            <span className="text-2xl font-black text-red-400">{affectedServices.length}</span>
             <span className="text-neutral-500 text-xs">/ {totalServices} total</span>
           </div>
         </div>
@@ -36,9 +38,11 @@ const ImpactSummary: React.FC<ImpactSummaryProps> = ({
           <Users className="w-4 h-4 text-neutral-300" />
         </div>
         <div>
-          <p className="text-neutral-400 text-xs font-mono mb-0.5">Impacted Traffic</p>
+          <p className="text-xs font-mono uppercase tracking-wider text-neutral-400 font-semibold mb-0.5">
+            Impacted Traffic
+          </p>
           <div className="flex items-baseline space-x-1.5 font-mono">
-            <span className="text-xl font-bold text-white">~{affectedUsers.toLocaleString()}</span>
+            <span className="text-2xl font-black text-white">~{affectedUsers.toLocaleString()}</span>
             <span className="text-neutral-500 text-xs">users</span>
           </div>
         </div>

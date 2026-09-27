@@ -20,13 +20,13 @@ export default function MetricCard({ title, value, unit, data, status, icon }: M
   return (
     <div className={`p-3.5 rounded-lg border ${isHarm ? 'border-red-500/40 bg-red-950/10' : 'border-white/10 bg-white/[0.02]'} backdrop-blur-md flex flex-col h-32 transition-all`}>
       <div className="flex justify-between items-center mb-1">
-        <div className="flex items-center gap-2 text-neutral-400 font-mono text-xs">
+        <div className="flex items-center gap-2 text-neutral-400 font-mono text-xs font-medium">
           <span className={isHarm ? 'text-red-400' : 'text-neutral-400'}>{icon}</span>
           <span>{title}</span>
         </div>
-        <div className="text-base font-bold font-mono text-white">
+        <div className="text-xl font-bold font-mono text-white">
           <span className={isHarm ? 'text-red-400 font-bold' : 'text-white'}>{value}</span>{' '}
-          <span className="text-[11px] font-normal text-neutral-500">{unit}</span>
+          <span className="text-xs font-normal text-neutral-500">{unit}</span>
         </div>
       </div>
 

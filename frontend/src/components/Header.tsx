@@ -23,14 +23,14 @@ const Header: React.FC<HeaderProps> = ({ systemStatus, incidentCount, isBackendC
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-white via-neutral-100 to-neutral-400 bg-clip-text text-transparent">
+              <h1 className="text-xl font-black tracking-tight bg-gradient-to-r from-white via-neutral-100 to-neutral-400 bg-clip-text text-transparent">
                 TraceX
               </h1>
-              <span className="text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded border border-white/15 bg-white/[0.03] text-neutral-400">
+              <span className="text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded border border-white/15 bg-white/[0.03] text-neutral-400 font-semibold">
                 SRE Topology
               </span>
             </div>
-            <p className="text-[11px] text-neutral-400 font-mono">Distributed Root Cause Analyzer</p>
+            <p className="text-xs text-neutral-400 font-mono">Distributed Root Cause Analyzer</p>
           </div>
         </div>
 

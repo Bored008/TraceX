@@ -67,11 +67,11 @@ export default function OrderOutcomeModal({
               )}
             </div>
 
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+            <h3 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
               {isConfirmed ? 'Order Placed in 8 Mins! ⚡' : 'Order Processing Disrupted'}
             </h3>
 
-            <p className="text-xs sm:text-sm text-gray-600 max-w-sm mx-auto leading-relaxed">
+            <p className="text-sm text-gray-600 max-w-sm mx-auto leading-relaxed">
               {isConfirmed
                 ? 'Your groceries are being packed right now at our nearest dark store.'
                 : 'A downstream microservice timed out while processing your checkout request.'}
@@ -105,7 +105,7 @@ export default function OrderOutcomeModal({
                     <Check className="w-3 h-3 stroke-[3]" />
                   </span>
                   <p className="text-xs font-bold text-gray-900">Order Verified & Inventory Reserved</p>
-                  <p className="text-[11px] text-gray-500">API Gateway ➔ Auth ➔ Order Service (200 OK)</p>
+                  <p className="text-[11px] text-gray-500 font-mono">API Gateway ➔ Auth ➔ Order Service (200 OK)</p>
                 </div>
 
                 <div className="relative">
@@ -113,7 +113,7 @@ export default function OrderOutcomeModal({
                     <Check className="w-3 h-3 stroke-[3]" />
                   </span>
                   <p className="text-xs font-bold text-gray-900">Payment Captured & Reconciled</p>
-                  <p className="text-[11px] text-gray-500">Payment Service ➔ Ledger (200 OK)</p>
+                  <p className="text-[11px] text-gray-500 font-mono">Payment Service ➔ Ledger (200 OK)</p>
                 </div>
 
                 <div className="relative">
@@ -140,7 +140,7 @@ export default function OrderOutcomeModal({
               {/* SRE / TraceX Root Cause Analysis Card */}
               <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-3">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-extrabold text-indigo-950 uppercase tracking-wider text-[11px]">
+                  <span className="font-black text-indigo-950 uppercase tracking-wider text-xs">
                     TraceX Autonomous MicroRCA Diagnostic
                   </span>
                   <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-mono text-[10px] font-bold border border-rose-200">
@@ -151,13 +151,13 @@ export default function OrderOutcomeModal({
                 <div className="grid grid-cols-2 gap-2 text-xs font-mono">
                   <div className="p-2.5 rounded-xl bg-white border border-indigo-100 shadow-2xs">
                     <span className="text-gray-400 block text-[9px] uppercase font-bold">Failed Node</span>
-                    <span className="text-rose-600 font-black truncate block">
+                    <span className="text-rose-600 font-black text-sm truncate block">
                       {outcome.failureDetails?.service || 'postgres-db'}
                     </span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-white border border-indigo-100 shadow-2xs">
                     <span className="text-gray-400 block text-[9px] uppercase font-bold">Anomaly Type</span>
-                    <span className="text-amber-700 font-black truncate block">
+                    <span className="text-amber-700 font-black text-sm truncate block">
                       {outcome.failureDetails?.errorType || 'Latency / Drop'}
                     </span>
                   </div>

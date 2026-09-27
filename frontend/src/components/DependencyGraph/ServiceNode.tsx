@@ -60,7 +60,7 @@ export default function ServiceNode({ data }: { data: ServiceNodeData }) {
             {data?.icon || '📦'}
           </div>
           <div className="min-w-0">
-            <h3 className="font-semibold text-white text-xs truncate leading-snug">
+            <h3 className="font-bold text-white text-[13px] truncate leading-tight">
               {data?.name || data?.serviceId}
             </h3>
             <p className="text-[10px] text-neutral-400 font-mono truncate">{data?.serviceId}</p>
@@ -78,7 +78,7 @@ export default function ServiceNode({ data }: { data: ServiceNodeData }) {
               Harm
             </span>
           ) : (
-            <div className="flex items-center gap-1 text-[10px] font-mono text-emerald-400">
+            <div className="flex items-center gap-1 text-[10px] font-mono text-emerald-400 font-semibold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             </div>
           )}
@@ -86,31 +86,31 @@ export default function ServiceNode({ data }: { data: ServiceNodeData }) {
       </div>
 
       {/* Metrics Grid (Sharp outlined transparent boxes) */}
-      <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+      <div className="grid grid-cols-2 gap-1.5">
         <div className="bg-white/[0.02] p-1.5 rounded border border-white/[0.08] flex flex-col">
-          <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-mono">Latency</span>
-          <span className={`font-mono font-semibold text-xs ${isLatencyHarm ? 'text-red-400 font-bold' : 'text-emerald-400'}`}>
+          <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-mono font-medium">Latency</span>
+          <span className={`font-mono text-xs font-bold ${isLatencyHarm ? 'text-red-400' : 'text-emerald-400'}`}>
             {latency}ms
           </span>
         </div>
 
         <div className="bg-white/[0.02] p-1.5 rounded border border-white/[0.08] flex flex-col">
-          <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-mono">Errors</span>
-          <span className={`font-mono font-semibold text-xs ${isErrorHarm ? 'text-red-400 font-bold' : 'text-emerald-400'}`}>
+          <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-mono font-medium">Errors</span>
+          <span className={`font-mono text-xs font-bold ${isErrorHarm ? 'text-red-400' : 'text-emerald-400'}`}>
             {errorRate}%
           </span>
         </div>
 
         <div className="bg-white/[0.02] p-1.5 rounded border border-white/[0.08] flex flex-col">
-          <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-mono">Req/s</span>
-          <span className="font-mono font-semibold text-xs text-white">
+          <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-mono font-medium">Req/s</span>
+          <span className="font-mono text-xs font-bold text-white">
             {throughput}
           </span>
         </div>
 
         <div className="bg-white/[0.02] p-1.5 rounded border border-white/[0.08] flex flex-col">
-          <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-mono">CPU</span>
-          <span className={`font-mono font-semibold text-xs ${isCpuHarm ? 'text-red-400 font-bold' : 'text-emerald-400'}`}>
+          <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-mono font-medium">CPU</span>
+          <span className={`font-mono text-xs font-bold ${isCpuHarm ? 'text-red-400' : 'text-emerald-400'}`}>
             {cpu}%
           </span>
         </div>

@@ -64,14 +64,14 @@ export default function ProductCard({
       {/* Item Details */}
       <div className="pt-2.5 flex-1 flex flex-col justify-between">
         <div>
-          <h3 className="font-bold text-gray-900 text-xs sm:text-[13px] leading-tight line-clamp-2 min-h-[32px] group-hover:text-[#0c831f] transition-colors">
+          <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-2 min-h-[36px] group-hover:text-[#0c831f] transition-colors">
             {item.name}
           </h3>
 
           {/* Unit Size */}
           <div className="flex items-center justify-between text-xs text-gray-500 font-medium mt-1">
             <span>{item.unit || '1 unit'}</span>
-            <div className="flex items-center gap-0.5 text-[11px] text-amber-600 font-semibold">
+            <div className="flex items-center gap-0.5 text-xs text-amber-700 font-bold">
               <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
               <span>{item.rating}</span>
             </div>
@@ -82,7 +82,7 @@ export default function ProductCard({
         <div className="pt-3 mt-1 border-t border-gray-100 flex items-center justify-between">
           <div className="flex flex-col">
             <div className="flex items-baseline gap-1.5">
-              <span className="text-sm sm:text-base font-black text-gray-900">
+              <span className="text-base sm:text-lg font-black text-gray-900">
                 ₹{item.price}
               </span>
               {item.originalPrice && item.originalPrice > item.price && (

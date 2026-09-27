@@ -48,7 +48,7 @@ export default function CartDrawer({
                 <ShoppingCart className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-base font-extrabold text-gray-900">My Cart</h2>
+                <h2 className="text-lg font-extrabold text-gray-900">My Cart</h2>
                 <p className="text-xs text-gray-500 font-medium">
                   {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in basket
                 </p>
@@ -98,9 +98,9 @@ export default function CartDrawer({
                         {item.icon}
                       </div>
                       <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-gray-900 truncate">{item.name}</h4>
-                        <p className="text-[11px] text-gray-500 font-medium">{item.unit || '1 unit'}</p>
-                        <p className="text-xs font-black text-gray-900 mt-0.5">
+                        <h4 className="text-sm font-bold text-gray-900 truncate">{item.name}</h4>
+                        <p className="text-xs text-gray-500 font-medium">{item.unit || '1 unit'}</p>
+                        <p className="text-sm font-black text-gray-900 mt-0.5">
                           ₹{item.price * quantity}
                         </p>
                       </div>
@@ -133,7 +133,7 @@ export default function CartDrawer({
             <div className="p-4 bg-white border-t border-gray-200 space-y-3 shadow-lg">
               {/* Bill breakdown */}
               <div className="bg-[#f8f9fc] rounded-xl p-3.5 border border-gray-200/80 space-y-2 text-xs">
-                <div className="font-extrabold text-gray-800 text-[11px] uppercase tracking-wider">
+                <div className="font-black text-gray-800 text-xs uppercase tracking-wider">
                   Bill Summary
                 </div>
                 <div className="flex justify-between text-gray-600">
@@ -161,16 +161,16 @@ export default function CartDrawer({
                   <span>Handling & Packaging</span>
                   <span className="font-semibold text-gray-900">₹4</span>
                 </div>
-                <div className="flex justify-between text-sm font-black text-gray-900 pt-2 border-t border-gray-200">
+                <div className="flex justify-between text-base font-extrabold text-gray-900 pt-2 border-t border-gray-200">
                   <span>Grand Total</span>
-                  <span className="text-base text-[#0c831f] font-black">
+                  <span className="text-xl text-[#0c831f] font-black">
                     ₹{Math.round(subtotal + (subtotal > 199 ? 0 : 15) + 4)}
                   </span>
                 </div>
               </div>
 
               {/* TraceX Assurance */}
-              <div className="flex items-center gap-2 text-[11px] text-gray-500 font-medium px-1">
+              <div className="flex items-center gap-2 text-xs text-gray-500 font-medium px-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#0c831f] flex-shrink-0" />
                 <span>Zero cancellation fee within 1 min • TraceX live verified</span>
               </div>
@@ -181,8 +181,8 @@ export default function CartDrawer({
                 className="w-full flex items-center justify-between px-5 py-3.5 rounded-xl bg-[#0c831f] hover:bg-[#0a6f1a] text-white font-extrabold text-sm shadow-md shadow-emerald-800/25 active:scale-[0.99] transition-all cursor-pointer"
               >
                 <div className="flex flex-col text-left">
-                  <span className="text-[11px] font-medium opacity-90">Total Payable</span>
-                  <span className="text-base font-black">
+                  <span className="text-xs font-medium opacity-90">Total Payable</span>
+                  <span className="text-lg font-black">
                     ₹{Math.round(subtotal + (subtotal > 199 ? 0 : 15) + 4)}
                   </span>
                 </div>

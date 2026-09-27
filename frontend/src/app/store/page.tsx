@@ -112,7 +112,7 @@ export default function StorePage() {
         {/* Category Horizontal Filter Bar */}
         <section className="space-y-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-base sm:text-lg font-extrabold text-gray-900 tracking-tight">
+            <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight">
               Explore Categories
             </h2>
             <span className="text-xs text-gray-500 font-medium">

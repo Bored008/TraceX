@@ -29,35 +29,35 @@ export default function RootCausePanel({ result }: RootCausePanelProps) {
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] uppercase font-mono tracking-wider text-neutral-400">
+            <span className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 font-medium">
               Root Cause Identification
             </span>
-            <span className="px-2 py-0.5 text-[9px] font-mono font-bold tracking-wider rounded border border-red-500/40 bg-red-500/20 text-red-400">
+            <span className="px-2 py-0.5 text-[10px] font-mono font-bold tracking-wider rounded border border-red-500/40 bg-red-500/20 text-red-400">
               {result.severity.toUpperCase()} RISK
             </span>
           </div>
 
           <div className="flex items-center gap-2 text-red-400">
-            <AlertOctagon className="w-5 h-5 flex-shrink-0 animate-pulse text-red-500" />
-            <h2 className="text-base font-bold text-white tracking-tight">
+            <AlertOctagon className="w-6 h-6 flex-shrink-0 animate-pulse text-red-500" />
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
               {result.rootCause.serviceName}
             </h2>
           </div>
 
-          <p className="text-xs text-red-300/90 mt-1 font-mono">
+          <p className="text-xs text-red-300 font-mono font-medium mt-1">
             Origin: {result.rootCause.description}
           </p>
         </div>
 
         <div className="flex flex-col items-center">
           <ConfidenceRing value={result.confidence} size={64} />
-          <span className="text-[9px] text-neutral-400 mt-1 font-mono">Confidence</span>
+          <span className="text-[10px] text-neutral-400 mt-1 font-mono font-medium">Confidence</span>
         </div>
       </div>
 
       {/* Causal Explanation Box */}
       <div className="bg-black/60 rounded border border-white/10 p-3.5">
-        <h4 className="text-[11px] font-mono text-neutral-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+        <h4 className="text-xs font-mono text-neutral-300 uppercase tracking-wider mb-1 flex items-center gap-1.5 font-bold">
           <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
           Causal Diagnosis
         </h4>

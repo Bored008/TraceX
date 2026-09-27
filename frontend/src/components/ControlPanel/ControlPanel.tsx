@@ -22,10 +22,10 @@ export default function ControlPanel({
     <div className="bg-white/[0.02] backdrop-blur-md rounded-lg border border-white/10 p-5 select-none">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-white/10">
         <div>
-          <h3 className="text-sm font-bold text-white tracking-tight">
+          <h3 className="text-base font-bold text-white tracking-tight">
             Fault Injection & Risk Simulator
           </h3>
-          <p className="text-[11px] text-neutral-400 font-mono">
+          <p className="text-xs text-neutral-400 font-mono">
             Trigger simulated distributed faults to evaluate root-cause detection
           </p>
         </div>
@@ -72,7 +72,7 @@ export default function ControlPanel({
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <div className="flex items-center gap-2">
                     <span className="text-base">{scenario.icon || '⚡'}</span>
-                    <span className="font-semibold text-xs text-white truncate">{scenario.name}</span>
+                    <span className="font-bold text-xs sm:text-[13px] text-white truncate">{scenario.name}</span>
                   </div>
                   {isScenarioActive && (
                     <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/40">

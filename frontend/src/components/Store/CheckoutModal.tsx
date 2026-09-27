@@ -78,7 +78,7 @@ export default function CheckoutModal({
           <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-gray-200 shadow-2xs">
             <div>
               <span className="text-xs text-gray-500 font-medium">Total Amount Payable</span>
-              <p className="text-2xl font-black text-gray-900">₹{Math.round(total)}</p>
+              <p className="text-3xl font-black text-gray-900">₹{Math.round(total)}</p>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-emerald-800 font-bold bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
               <ShieldCheck className="w-4 h-4 text-[#0c831f]" />
@@ -95,25 +95,25 @@ export default function CheckoutModal({
               <button
                 type="button"
                 onClick={() => setPaymentMethod('upi')}
-                className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   paymentMethod === 'upi'
                     ? 'border-[#0c831f] bg-[#e8f5e9] text-[#0c831f] shadow-2xs'
                     : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <Smartphone className="w-4 h-4" />
+                <Smartphone className="w-4 h-4 flex-shrink-0" />
                 <span>Instant UPI (GPay / PhonePe)</span>
               </button>
               <button
                 type="button"
                 onClick={() => setPaymentMethod('card')}
-                className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   paymentMethod === 'card'
                     ? 'border-[#0c831f] bg-[#e8f5e9] text-[#0c831f] shadow-2xs'
                     : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <CreditCard className="w-4 h-4" />
+                <CreditCard className="w-4 h-4 flex-shrink-0" />
                 <span>Credit / Debit Card</span>
               </button>
             </div>

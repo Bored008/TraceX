@@ -72,14 +72,14 @@ export default function DashboardPage() {
                     }`}
                   />
                 </span>
-                <h2 className="text-xs font-mono font-semibold tracking-wider uppercase text-neutral-200">
+                <h2 className="text-sm font-mono font-bold tracking-wider uppercase text-white">
                   Live Server Dependency Topology
                 </h2>
               </div>
               <div className="flex items-center gap-3 text-xs text-neutral-400 font-mono">
                 <span>{services.length} Nodes</span>
                 <span className="text-neutral-700">•</span>
-                <span className="text-emerald-400">Green Dotted Telemetry Flow</span>
+                <span className="text-emerald-400 font-medium">Green Dotted Telemetry Flow</span>
               </div>
             </div>
 
@@ -140,12 +140,12 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-white/[0.01]">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <h2 className="text-xs font-mono font-semibold uppercase tracking-wider text-neutral-200">
+                <h2 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
                   Node Telemetry & Performance
                 </h2>
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-[11px] text-neutral-400 font-mono">Service:</label>
+                <label className="text-xs text-neutral-400 font-mono">Service:</label>
                 <select
                   aria-label="Filter Telemetry Service"
                   className="text-xs bg-black border border-white/15 rounded px-2.5 py-1 text-white focus:outline-none focus:border-white/40 transition-all font-mono cursor-pointer"
@@ -171,11 +171,11 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-white/[0.01]">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
-                <h2 className="text-xs font-mono font-semibold uppercase tracking-wider text-neutral-200">
+                <h2 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
                   Event Stream & Anomaly Log
                 </h2>
               </div>
-              <span className="text-[11px] text-neutral-500 font-mono">
+              <span className="text-xs text-neutral-400 font-mono">
                 {timelineEvents.length} Events
               </span>
             </div>
@@ -197,7 +197,7 @@ export default function DashboardPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-4 px-6 text-center text-[11px] text-neutral-500 font-mono select-none">
+      <footer className="border-t border-white/10 py-4 px-6 text-center text-xs text-neutral-500 font-mono select-none">
         TraceX • Distributed Topology Root Cause Analyzer • Minimalist SRE Console
       </footer>
     </div>

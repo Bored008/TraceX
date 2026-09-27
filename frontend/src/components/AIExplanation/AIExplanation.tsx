@@ -22,14 +22,14 @@ const AIExplanation: React.FC<AIExplanationProps> = ({
             <Terminal className="w-3.5 h-3.5 text-neutral-300" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white tracking-tight">
+            <h3 className="text-base font-bold text-white tracking-tight">
               Diagnostic Synthesis & Remediation
             </h3>
-            <p className="text-[11px] text-neutral-400 font-mono">Automated root-cause telemetry reasoning</p>
+            <p className="text-xs text-neutral-400 font-mono">Automated root-cause telemetry reasoning</p>
           </div>
         </div>
 
-        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded border border-white/15 bg-white/[0.03] text-neutral-400">
+        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded border border-white/15 bg-white/[0.03] text-neutral-400 font-semibold">
           Trace Analysis
         </span>
       </div>
@@ -46,7 +46,7 @@ const AIExplanation: React.FC<AIExplanationProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Causal Finding */}
           <div>
-            <h4 className="text-xs font-mono text-neutral-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <h4 className="text-xs font-mono text-neutral-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 font-bold">
               <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
               Observed Failure Mechanism
             </h4>
@@ -58,7 +58,7 @@ const AIExplanation: React.FC<AIExplanationProps> = ({
           {/* Recommended Resolution */}
           {suggestedFix && (
             <div>
-              <h4 className="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <h4 className="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 font-bold">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 Recommended System Remediation
               </h4>
