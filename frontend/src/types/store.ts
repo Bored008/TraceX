@@ -10,6 +10,7 @@ export interface FoodItem {
   prepTime: string;
   calories?: number;
   icon: string;
+  image?: string;
   badge?: string;
   description: string;
   isVegetarian: boolean;

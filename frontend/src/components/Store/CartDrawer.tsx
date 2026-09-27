@@ -94,8 +94,16 @@ export default function CartDrawer({
                 {cartItems.map(({ item, quantity }) => (
                   <div key={item.id} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-xl bg-[#f8f9fc] border border-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
-                        {item.icon}
+                      <div className="w-12 h-12 rounded-xl bg-[#f8f9fc] border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-2xl">{item.icon}</span>
+                        )}
                       </div>
                       <div className="min-w-0">
                         <h4 className="text-sm font-bold text-gray-900 truncate">{item.name}</h4>

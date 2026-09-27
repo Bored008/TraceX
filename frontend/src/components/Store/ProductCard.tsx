@@ -55,10 +55,19 @@ export default function ProductCard({
           </span>
         </div>
 
-        {/* Large Food Emoji Icon */}
-        <span className="text-5xl filter drop-shadow-sm group-hover:scale-110 transition-transform duration-200 select-none">
-          {item.icon}
-        </span>
+        {/* Real Food Image or Food Emoji Icon Fallback */}
+        {item.image ? (
+          <img
+            src={item.image}
+            alt={item.name}
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 select-none"
+          />
+        ) : (
+          <span className="text-5xl filter drop-shadow-sm group-hover:scale-110 transition-transform duration-200 select-none">
+            {item.icon}
+          </span>
+        )}
       </div>
 
       {/* Item Details */}
