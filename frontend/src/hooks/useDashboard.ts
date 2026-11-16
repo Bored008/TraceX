@@ -14,6 +14,7 @@ import {
 } from '@/lib/mock-data';
 import { api } from '@/lib/api';
 import { getSocket } from '@/lib/socket';
+import { API_BASE_URL } from '@/lib/constants';
 
 // Whether to explicitly force mock mode
 const FORCE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
@@ -51,36 +52,66 @@ export function useDashboard() {
 
   const faultTimersRef = useRef<NodeJS.Timeout[]>([]);
   const isConnectedRef = useRef(false);
+  const sseConnectedRef = useRef(false);
+  const socketConnectedRef = useRef(false);
+  const healthOkRef = useRef(false);
 
-  // Initialize backend connection and Socket.IO listeners
+  // Initialize backend connection, SSE, and Socket.IO listeners
   useEffect(() => {
     if (FORCE_MOCK) return;
 
     const socket = getSocket();
+    let eventSource: EventSource | null = null;
 
-    // Check backend health via REST first
+    const updateConnection = (status: { sse?: boolean; socket?: boolean; health?: boolean }) => {
+      if (typeof status.sse === 'boolean') sseConnectedRef.current = status.sse;
+      if (typeof status.socket === 'boolean') socketConnectedRef.current = status.socket;
+      if (typeof status.health === 'boolean') healthOkRef.current = status.health;
+
+      const isConnected = sseConnectedRef.current || socketConnectedRef.current || healthOkRef.current;
+      isConnectedRef.current = isConnected;
+
+      setState((prev) => {
+        if (prev.isBackendConnected === isConnected) return prev;
+        return {
+          ...prev,
+          isBackendConnected: isConnected,
+        };
+      });
+    };
+
+    const addConnectedTimelineEvent = () => {
+      setState((prev) => {
+        const hasConnEvent = prev.timelineEvents.some((e) => e.title === 'Backend Connected');
+        if (hasConnEvent) return prev;
+        return {
+          ...prev,
+          timelineEvents: [
+            ...prev.timelineEvents,
+            {
+              id: `backend-conn-${Date.now()}`,
+              timestamp: Date.now(),
+              type: 'info',
+              title: 'Backend Connected',
+              description: 'Streaming real-time telemetry from Vercel Engine & MicroRCA',
+            },
+          ],
+        };
+      });
+    };
+
+    // 1. Check backend health via REST (/api/health)
     api
       .healthCheck()
       .then((res) => {
         if (res.status === 'healthy') {
-          isConnectedRef.current = true;
-          setState((prev) => ({
-            ...prev,
-            isBackendConnected: true,
-            timelineEvents: [
-              ...prev.timelineEvents,
-              {
-                id: `backend-conn-${Date.now()}`,
-                timestamp: Date.now(),
-                type: 'info',
-                title: 'Backend Connected',
-                description: 'Streaming real-time telemetry from FastAPI & MicroRCA engine',
-              },
-            ],
-          }));
+          updateConnection({ health: true });
+          addConnectedTimelineEvent();
 
           // Fetch initial service graph
           return api.getServiceGraph();
+        } else {
+          updateConnection({ health: false });
         }
       })
       .then((graph) => {
@@ -89,24 +120,22 @@ export function useDashboard() {
         }
       })
       .catch(() => {
-        isConnectedRef.current = false;
-        setState((prev) => ({ ...prev, isBackendConnected: false }));
+        updateConnection({ health: false });
       });
 
-    // Connect socket
-    socket.connect();
+    // Periodic health check fallback (every 10s)
+    const healthInterval = setInterval(() => {
+      api
+        .healthCheck()
+        .then((res) => {
+          updateConnection({ health: res.status === 'healthy' });
+        })
+        .catch(() => {
+          updateConnection({ health: false });
+        });
+    }, 10000);
 
-    const onConnect = () => {
-      isConnectedRef.current = true;
-      setState((prev) => ({ ...prev, isBackendConnected: true }));
-    };
-
-    const onDisconnect = () => {
-      isConnectedRef.current = false;
-      setState((prev) => ({ ...prev, isBackendConnected: false }));
-    };
-
-    const onMetricsUpdate = (data: { timestamp: number; services: ServiceInfo[] }) => {
+    const onMetricsUpdate = (data: { timestamp?: number; services: ServiceInfo[] }) => {
       if (data && Array.isArray(data.services) && data.services.length > 0) {
         setState((prev) => {
           const hasUnhealthyService = data.services.some(
@@ -142,18 +171,18 @@ export function useDashboard() {
     };
 
     const onAnomalyDetected = (anom: any) => {
+      if (!anom) return;
       const event: TimelineEvent = {
         id: anom.id || `anom-${Date.now()}`,
-        timestamp: anom.timestamp ? anom.timestamp * 1000 : Date.now(),
+        timestamp: anom.timestamp ? (anom.timestamp > 1e12 ? anom.timestamp : anom.timestamp * 1000) : Date.now(),
         type: 'anomaly',
-        serviceId: anom.service_id,
-        title: `${anom.service_id || 'Service'} Anomaly`,
-        description: anom.description || `Anomaly detected on ${anom.metric_name}`,
+        serviceId: anom.service_id || anom.serviceId,
+        title: `${anom.service_id || anom.serviceId || 'Service'} Anomaly`,
+        description: anom.description || `Anomaly detected on ${anom.metric_name || anom.metric || 'telemetry'}`,
         severity: anom.severity || 'HIGH',
       };
 
       setState((prev) => {
-        // Prevent duplicate events within short window
         const exists = prev.timelineEvents.some((e) => e.id === event.id);
         if (exists) return prev;
         return {
@@ -164,17 +193,18 @@ export function useDashboard() {
     };
 
     const onRcaCompleted = (incident: any) => {
+      if (!incident) return;
       const rcaResult: RootCauseResult = {
-        id: incident.id,
+        id: incident.id || `inc-${Date.now()}`,
         timestamp: incident.timestamp || Date.now(),
         rootCause: incident.rootCause || {
-          serviceId: incident.root_cause_service || 'postgres-db',
-          serviceName: incident.root_cause_service || 'PostgresDB',
-          metric: 'latency_p99',
-          description: incident.explanation || 'Root cause identified',
+          serviceId: incident.root_cause_service || incident.serviceId || 'postgres-db',
+          serviceName: incident.root_cause_service || incident.serviceName || 'PostgresDB',
+          metric: incident.metric || 'latency_p99',
+          description: incident.explanation || incident.description || 'Root cause identified',
           timestamp: incident.timestamp || Date.now(),
-          value: 4000,
-          baseline: 15,
+          value: incident.value || 4000,
+          baseline: incident.baseline || 15,
         },
         secondaryRootCauses: incident.secondaryRootCauses || [],
         secondaryRootCauseIds: incident.secondaryRootCauseIds || [],
@@ -200,7 +230,6 @@ export function useDashboard() {
       };
 
       setState((prev) => {
-        // Prevent duplicate RCA events within 5 seconds for the same service
         const isDuplicate = prev.timelineEvents.some(
           (e) => e.type === 'rca' && e.serviceId === rcaResult.rootCause.serviceId && (Date.now() - e.timestamp) < 5000
         );
@@ -221,6 +250,7 @@ export function useDashboard() {
     };
 
     const onChaosInjected = (data: { scenario: ChaosScenario; target?: string }) => {
+      if (!data || !data.scenario) return;
       setState((prev) => {
         const nextList = prev.activeScenarios.includes(data.scenario)
           ? prev.activeScenarios
@@ -235,6 +265,7 @@ export function useDashboard() {
     };
 
     const onChaosUpdated = (data: { activeScenarios: ChaosScenario[] }) => {
+      if (!data) return;
       setState((prev) => {
         const nextList = Array.isArray(data.activeScenarios) ? data.activeScenarios : [];
         return {
@@ -267,8 +298,135 @@ export function useDashboard() {
       });
     };
 
+    // 2. Server-Sent Events (SSE) Stream at /api/events
+    const sseEndpoint = API_BASE_URL ? `${API_BASE_URL}/api/events` : '/api/events';
+    if (typeof window !== 'undefined' && typeof EventSource !== 'undefined') {
+      try {
+        eventSource = new EventSource(sseEndpoint);
+
+        eventSource.onopen = () => {
+          updateConnection({ sse: true });
+          addConnectedTimelineEvent();
+        };
+
+        eventSource.onerror = () => {
+          updateConnection({ sse: false });
+        };
+
+        eventSource.addEventListener('metrics:update', (event: MessageEvent) => {
+          try {
+            updateConnection({ sse: true });
+            const data = JSON.parse(event.data);
+            onMetricsUpdate(data);
+          } catch (err) {
+            console.error('Error parsing SSE metrics:update:', err);
+          }
+        });
+
+        eventSource.addEventListener('anomaly:detected', (event: MessageEvent) => {
+          try {
+            updateConnection({ sse: true });
+            const data = JSON.parse(event.data);
+            onAnomalyDetected(data);
+          } catch (err) {
+            console.error('Error parsing SSE anomaly:detected:', err);
+          }
+        });
+
+        eventSource.addEventListener('rca:completed', (event: MessageEvent) => {
+          try {
+            updateConnection({ sse: true });
+            const data = JSON.parse(event.data);
+            onRcaCompleted(data);
+          } catch (err) {
+            console.error('Error parsing SSE rca:completed:', err);
+          }
+        });
+
+        eventSource.addEventListener('incident:created', (event: MessageEvent) => {
+          try {
+            updateConnection({ sse: true });
+            const data = JSON.parse(event.data);
+            onRcaCompleted(data);
+          } catch (err) {
+            console.error('Error parsing SSE incident:created:', err);
+          }
+        });
+
+        eventSource.addEventListener('chaos:injected', (event: MessageEvent) => {
+          try {
+            updateConnection({ sse: true });
+            const data = JSON.parse(event.data);
+            onChaosInjected(data);
+          } catch (err) {
+            console.error('Error parsing SSE chaos:injected:', err);
+          }
+        });
+
+        eventSource.addEventListener('chaos:updated', (event: MessageEvent) => {
+          try {
+            updateConnection({ sse: true });
+            const data = JSON.parse(event.data);
+            onChaosUpdated(data);
+          } catch (err) {
+            console.error('Error parsing SSE chaos:updated:', err);
+          }
+        });
+
+        eventSource.addEventListener('chaos:reset', () => {
+          try {
+            updateConnection({ sse: true });
+            onChaosReset();
+          } catch (err) {
+            console.error('Error handling SSE chaos:reset:', err);
+          }
+        });
+
+        eventSource.onmessage = (event: MessageEvent) => {
+          try {
+            updateConnection({ sse: true });
+            const parsed = JSON.parse(event.data);
+            if (parsed.event && parsed.data) {
+              if (parsed.event === 'metrics:update') onMetricsUpdate(parsed.data);
+              else if (parsed.event === 'anomaly:detected') onAnomalyDetected(parsed.data);
+              else if (parsed.event === 'rca:completed' || parsed.event === 'incident:created') onRcaCompleted(parsed.data);
+              else if (parsed.event === 'chaos:injected') onChaosInjected(parsed.data);
+              else if (parsed.event === 'chaos:updated') onChaosUpdated(parsed.data);
+              else if (parsed.event === 'chaos:reset') onChaosReset();
+            } else if (parsed.services && Array.isArray(parsed.services)) {
+              onMetricsUpdate(parsed);
+            }
+          } catch {
+            // Heartbeat / unparseable comment
+          }
+        };
+      } catch (err) {
+        console.warn('Failed to initialize EventSource:', err);
+      }
+    }
+
+    // 3. Socket.IO connection (hybrid support)
+    try {
+      socket.connect();
+    } catch {
+      // Ignore initial socket connect errors on serverless
+    }
+
+    const onConnect = () => {
+      updateConnection({ socket: true });
+    };
+
+    const onDisconnect = () => {
+      updateConnection({ socket: false });
+    };
+
+    const onConnectError = () => {
+      updateConnection({ socket: false });
+    };
+
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
+    socket.on('connect_error', onConnectError);
     socket.on('metrics:update', onMetricsUpdate);
     socket.on('anomaly:detected', onAnomalyDetected);
     socket.on('rca:completed', onRcaCompleted);
@@ -278,8 +436,13 @@ export function useDashboard() {
     socket.on('chaos:reset', onChaosReset);
 
     return () => {
+      clearInterval(healthInterval);
+      if (eventSource) {
+        eventSource.close();
+      }
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
+      socket.off('connect_error', onConnectError);
       socket.off('metrics:update', onMetricsUpdate);
       socket.off('anomaly:detected', onAnomalyDetected);
       socket.off('rca:completed', onRcaCompleted);
@@ -287,7 +450,11 @@ export function useDashboard() {
       socket.off('chaos:injected', onChaosInjected);
       socket.off('chaos:updated', onChaosUpdated);
       socket.off('chaos:reset', onChaosReset);
-      socket.disconnect();
+      try {
+        socket.disconnect();
+      } catch {
+        // Ignore disconnect error
+      }
     };
   }, []);
 
@@ -312,12 +479,20 @@ export function useDashboard() {
       setState((prev) => {
         const isAlreadyActive = prev.activeScenarios.includes(scenario);
 
-        // If backend connected, call REST API
+        // Always call REST API endpoint (/api/chaos/stop or /api/chaos/inject)
+        if (isAlreadyActive) {
+          api.stopChaos(scenario).catch((err) => {
+            console.error('Failed to stop chaos via backend:', err);
+          });
+        } else {
+          api.injectChaos(scenario).catch((err) => {
+            console.error('Failed to inject chaos via backend:', err);
+          });
+        }
+
+        // If backend connected, update state optimistically
         if (isConnectedRef.current) {
           if (isAlreadyActive) {
-            api.stopChaos(scenario).catch((err) => {
-              console.error('Failed to stop chaos via backend:', err);
-            });
             const nextList = prev.activeScenarios.filter((s) => s !== scenario);
             return {
               ...prev,
@@ -336,9 +511,6 @@ export function useDashboard() {
               ],
             };
           } else {
-            api.injectChaos(scenario).catch((err) => {
-              console.error('Failed to inject chaos via backend:', err);
-            });
             const nextList = [...prev.activeScenarios, scenario];
             return {
               ...prev,
@@ -488,12 +660,10 @@ export function useDashboard() {
     faultTimersRef.current.forEach(clearTimeout);
     faultTimersRef.current = [];
 
-    // If backend connected, call REST reset
-    if (isConnectedRef.current) {
-      api.resetChaos().catch((err) => {
-        console.error('Failed to reset chaos via backend:', err);
-      });
-    }
+    // Always call REST reset endpoint (/api/chaos/reset)
+    api.resetChaos().catch((err) => {
+      console.error('Failed to reset chaos via backend:', err);
+    });
 
     const freshServices = generateInitialServices();
 
@@ -537,6 +707,7 @@ export function useDashboard() {
     systemStatus: state.systemStatus,
     injectFault,
     resetServices,
+    resetSystem: resetServices,
     selectService,
   };
 }

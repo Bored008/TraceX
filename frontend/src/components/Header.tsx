@@ -49,14 +49,14 @@ const Header: React.FC<HeaderProps> = ({ systemStatus, incidentCount, isBackendC
           <div
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-mono transition-all ${
               isBackendConnected
-                ? 'bg-white/[0.02] border-white/10 text-neutral-300'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                 : 'bg-red-950/20 border-red-500/30 text-red-400'
             }`}
           >
             <Radio
               className={`w-3.5 h-3.5 ${isBackendConnected ? 'text-emerald-400' : 'text-red-400 animate-pulse'}`}
             />
-            <span>{isBackendConnected ? 'WebSocket Live' : 'Backend Disconnected'}</span>
+            <span>{isBackendConnected ? 'Vercel Engine Live' : 'Backend Disconnected'}</span>
           </div>
 
           {/* System Health Status: Green (Safe) vs Red (Harm) */}
