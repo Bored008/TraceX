@@ -142,5 +142,10 @@ export const CHAOS_SCENARIOS = [
 ];
 
 // Backend API URL
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
-export const WS_URL = process.env.NEXT_PUBLIC_WS_URL || '';
+// When deployed on Vercel or switching away from Railway, always use same-origin relative URLs ('')
+// and explicitly ignore any stale Railway environment variables.
+const rawApiUrl = (process.env.NEXT_PUBLIC_API_URL || '').trim();
+export const API_BASE_URL = rawApiUrl.includes('railway.app') ? '' : rawApiUrl;
+
+const rawWsUrl = (process.env.NEXT_PUBLIC_WS_URL || '').trim();
+export const WS_URL = rawWsUrl.includes('railway.app') ? '' : rawWsUrl;

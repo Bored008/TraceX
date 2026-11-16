@@ -14,7 +14,7 @@ import {
 } from '@/lib/mock-data';
 import { api } from '@/lib/api';
 import { getSocket } from '@/lib/socket';
-import { API_BASE_URL } from '@/lib/constants';
+import { API_BASE_URL, WS_URL } from '@/lib/constants';
 
 // Whether to explicitly force mock mode
 const FORCE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
@@ -405,55 +405,60 @@ export function useDashboard() {
       }
     }
 
-    // 3. Socket.IO connection (hybrid support)
-    try {
-      socket.connect();
-    } catch {
-      // Ignore initial socket connect errors on serverless
+    // 3. Socket.IO connection (hybrid support: only if explicit external WebSocket server is configured)
+    const hasExternalWs = Boolean(WS_URL && !WS_URL.includes('railway'));
+    if (hasExternalWs) {
+      try {
+        socket.connect();
+      } catch {
+        // Ignore initial socket connect errors on serverless
+      }
+
+      const onConnect = () => {
+        updateConnection({ socket: true });
+      };
+
+      const onDisconnect = () => {
+        updateConnection({ socket: false });
+      };
+
+      const onConnectError = () => {
+        updateConnection({ socket: false });
+      };
+
+      socket.on('connect', onConnect);
+      socket.on('disconnect', onDisconnect);
+      socket.on('connect_error', onConnectError);
+      socket.on('metrics:update', onMetricsUpdate);
+      socket.on('anomaly:detected', onAnomalyDetected);
+      socket.on('rca:completed', onRcaCompleted);
+      socket.on('incident:created', onRcaCompleted);
+      socket.on('chaos:injected', onChaosInjected);
+      socket.on('chaos:updated', onChaosUpdated);
+      socket.on('chaos:reset', onChaosReset);
     }
-
-    const onConnect = () => {
-      updateConnection({ socket: true });
-    };
-
-    const onDisconnect = () => {
-      updateConnection({ socket: false });
-    };
-
-    const onConnectError = () => {
-      updateConnection({ socket: false });
-    };
-
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('connect_error', onConnectError);
-    socket.on('metrics:update', onMetricsUpdate);
-    socket.on('anomaly:detected', onAnomalyDetected);
-    socket.on('rca:completed', onRcaCompleted);
-    socket.on('incident:created', onRcaCompleted);
-    socket.on('chaos:injected', onChaosInjected);
-    socket.on('chaos:updated', onChaosUpdated);
-    socket.on('chaos:reset', onChaosReset);
 
     return () => {
       clearInterval(healthInterval);
       if (eventSource) {
         eventSource.close();
       }
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('connect_error', onConnectError);
-      socket.off('metrics:update', onMetricsUpdate);
-      socket.off('anomaly:detected', onAnomalyDetected);
-      socket.off('rca:completed', onRcaCompleted);
-      socket.off('incident:created', onRcaCompleted);
-      socket.off('chaos:injected', onChaosInjected);
-      socket.off('chaos:updated', onChaosUpdated);
-      socket.off('chaos:reset', onChaosReset);
-      try {
-        socket.disconnect();
-      } catch {
-        // Ignore disconnect error
+      if (hasExternalWs) {
+        socket.off('connect');
+        socket.off('disconnect');
+        socket.off('connect_error');
+        socket.off('metrics:update');
+        socket.off('anomaly:detected');
+        socket.off('rca:completed');
+        socket.off('incident:created');
+        socket.off('chaos:injected');
+        socket.off('chaos:updated');
+        socket.off('chaos:reset');
+        try {
+          socket.disconnect();
+        } catch {
+          // Ignore disconnect error
+        }
       }
     };
   }, []);
