@@ -24,6 +24,8 @@ interface DependencyGraphProps {
   rootCauseServiceId?: string;
   rootCauseServiceIds?: string[];
   affectedServiceIds?: string[];
+  selectedServiceId?: string | null;
+  onSelectService?: (serviceId: string | null) => void;
 }
 
 const nodeTypes: NodeTypes = {
@@ -34,7 +36,9 @@ export default function DependencyGraph({
   services = [], 
   rootCauseServiceId, 
   rootCauseServiceIds = [],
-  affectedServiceIds = [] 
+  affectedServiceIds = [],
+  selectedServiceId,
+  onSelectService
 }: DependencyGraphProps) {
   // Memoize layouted node positions once
   const layoutedPositions = useMemo(() => {
@@ -107,10 +111,11 @@ export default function DependencyGraph({
           },
           isRootCause,
           isAffected,
+          isSelected: id === selectedServiceId,
         },
       };
     });
-  }, [services, rootCauseServiceId, affectedServiceIds, layoutedPositions]);
+  }, [services, rootCauseServiceId, rootCauseServiceIds, affectedServiceIds, selectedServiceId, layoutedPositions]);
 
   // Compute reactive edges (green dotted lines for healthy, red for harm/critical)
   const edges: Edge[] = useMemo(() => {
@@ -154,7 +159,13 @@ export default function DependencyGraph({
         maxZoom={1.5}
         nodesDraggable={false}
         nodesConnectable={false}
-        elementsSelectable={false}
+        elementsSelectable={true}
+        onNodeClick={(_event, node) => {
+          onSelectService?.(node.id);
+        }}
+        onPaneClick={() => {
+          onSelectService?.(null);
+        }}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#2b2b32" />
         <Controls className="bg-[#141418]/95 border-white/20 fill-neutral-300 rounded-lg overflow-hidden shadow-lg" />

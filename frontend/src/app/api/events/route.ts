@@ -58,10 +58,14 @@ export async function GET() {
         sendEvent(event, data);
       });
 
-      // 1-second cadence tick for metrics evolution
+      // 1-second cadence tick for metrics evolution and live client streaming
       intervalId = setInterval(() => {
         try {
-          tickServerState();
+          const updatedServices = tickServerState();
+          sendEvent('metrics:update', {
+            timestamp: Date.now(),
+            services: updatedServices,
+          });
           sendComment('ping');
         } catch (err) {
           console.error('[TraceX SSE] Tick interval error:', err);

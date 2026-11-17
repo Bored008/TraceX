@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useDashboard } from '@/hooks/useDashboard';
 import Header from '@/components/Header';
 import dynamic from 'next/dynamic';
+import { ChaosScenario } from '@/types';
 
 const DependencyGraph = dynamic(
   () => import('@/components/DependencyGraph/DependencyGraph'),
@@ -42,6 +44,21 @@ export default function DashboardPage() {
   } = useDashboard();
 
   const isHarm = systemStatus !== 'healthy' || Boolean(rootCauseResult);
+
+  // Sync service and scenario from URL query parameters (e.g. from Storefront links)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const serviceParam = params.get('service');
+    const scenarioParam = params.get('scenario') as ChaosScenario | null;
+
+    if (scenarioParam) {
+      injectFault(scenarioParam);
+    }
+    if (serviceParam) {
+      selectService(serviceParam);
+    }
+  }, [injectFault, selectService]);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col font-sans selection:bg-white/20 relative">
@@ -90,6 +107,8 @@ export default function DashboardPage() {
                 rootCauseServiceId={rootCauseResult?.rootCause.serviceId}
                 rootCauseServiceIds={rootCauseResult?.secondaryRootCauseIds || []}
                 affectedServiceIds={rootCauseResult?.affectedServices}
+                selectedServiceId={selectedService?.id}
+                onSelectService={selectService}
               />
             </div>
           </section>

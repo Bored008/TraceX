@@ -59,6 +59,19 @@ export function useCart() {
     } catch (err) {
       console.error('Failed to reset system faults:', err);
     }
+
+    // Broadcast reset to any open TraceX dashboard windows
+    if (typeof window !== 'undefined') {
+      const payload = { type: 'fault:reset', timestamp: Date.now() };
+      try {
+        const bc = new BroadcastChannel('tracex_bus');
+        bc.postMessage(payload);
+        bc.close();
+      } catch {}
+      try {
+        localStorage.setItem('tracex_event', JSON.stringify(payload));
+      } catch {}
+    }
   }, []);
 
   // Submit order to backend microservice flow
@@ -105,6 +118,7 @@ export function useCart() {
           });
           clearCart();
         } else {
+          const failedService = data.failedService || (simulateFault === 'db_overload' ? 'postgres-db' : 'payment-service');
           // Microservice failure response
           setOrderOutcome({
             orderId,
@@ -113,13 +127,31 @@ export function useCart() {
             totalAmount: total,
             traceId: data.traceId || traceId,
             failureDetails: {
-              service: data.failedService || (simulateFault === 'db_overload' ? 'postgres-db' : 'payment-service'),
+              service: failedService,
               statusCode: data.statusCode || 504,
               errorType: data.errorType || 'Service Unavailable',
               userMessage: data.userMessage || 'We were unable to process your order at this time.',
               technicalMessage: data.technicalMessage || 'Connection pool timeout to downstream storage.',
             },
           });
+
+          // Sync failure to TraceX console tab
+          if (simulateFault && typeof window !== 'undefined') {
+            const payload = {
+              type: 'fault:inject',
+              scenario: simulateFault,
+              serviceId: failedService,
+              timestamp: Date.now(),
+            };
+            try {
+              const bc = new BroadcastChannel('tracex_bus');
+              bc.postMessage(payload);
+              bc.close();
+            } catch {}
+            try {
+              localStorage.setItem('tracex_event', JSON.stringify(payload));
+            } catch {}
+          }
         }
       } catch (err) {
         clearTimeout(timeoutId);
@@ -167,6 +199,24 @@ export function useCart() {
               technicalMessage: info.msg,
             },
           });
+
+          // Sync failure to TraceX console tab
+          if (typeof window !== 'undefined') {
+            const payload = {
+              type: 'fault:inject',
+              scenario: simulateFault,
+              serviceId: info.service,
+              timestamp: Date.now(),
+            };
+            try {
+              const bc = new BroadcastChannel('tracex_bus');
+              bc.postMessage(payload);
+              bc.close();
+            } catch {}
+            try {
+              localStorage.setItem('tracex_event', JSON.stringify(payload));
+            } catch {}
+          }
         } else {
           // Success fallback
           setOrderOutcome({

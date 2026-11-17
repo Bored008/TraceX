@@ -16,6 +16,7 @@ export interface ServiceNodeData extends Record<string, unknown> {
   };
   isRootCause?: boolean;
   isAffected?: boolean;
+  isSelected?: boolean;
 }
 
 export default function ServiceNode({ data }: { data: ServiceNodeData }) {
@@ -24,14 +25,19 @@ export default function ServiceNode({ data }: { data: ServiceNodeData }) {
   const isHarm = status === 'critical' || status === 'degraded' || status === 'down';
   const isRootCause = Boolean(data?.isRootCause);
   const isAffected = Boolean(data?.isAffected && !data?.isRootCause);
+  const isSelected = Boolean(data?.isSelected);
 
   // Sharp outlined box with dark gray background and low-opacity white border
-  let boxBorder = 'border-white/25 hover:border-white/50 bg-[#1c1c23] shadow-lg';
+  let boxBorder = 'border-white/25 hover:border-white/60 bg-[#1c1c23] shadow-lg';
   if (isRootCause) {
     boxBorder = 'border-red-500 ring-2 ring-red-500/40 bg-[#281316] shadow-[0_0_24px_rgba(239,68,68,0.3)]';
   } else if (isAffected || isHarm) {
     boxBorder = 'border-red-500/60 bg-[#201215] shadow-[0_0_15px_rgba(239,68,68,0.15)]';
   }
+
+  const selectionRing = isSelected
+    ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0e0e11] border-white shadow-[0_0_30px_rgba(255,255,255,0.4)] scale-[1.02]'
+    : '';
 
   // Defensive metric extraction
   const latency = typeof data?.metrics?.latency === 'number' ? Math.round(data.metrics.latency) : 10;
@@ -45,7 +51,7 @@ export default function ServiceNode({ data }: { data: ServiceNodeData }) {
 
   return (
     <div
-      className={`w-[210px] rounded-xl border ${boxBorder} p-3 shadow-md backdrop-blur-md transition-all duration-200 select-none`}
+      className={`w-[210px] rounded-xl border ${boxBorder} ${selectionRing} p-3 shadow-md backdrop-blur-md transition-all duration-200 select-none cursor-pointer`}
     >
       <Handle
         type="target"

@@ -169,7 +169,24 @@ export default function OrderOutcomeModal({
 
                 {/* Direct Action Link to TraceX SRE Dashboard */}
                 <Link
-                  href="/"
+                  href={`/?service=${outcome.failureDetails?.service || 'postgres-db'}`}
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      const payload = {
+                        type: 'select:service',
+                        serviceId: outcome.failureDetails?.service || 'postgres-db',
+                        timestamp: Date.now(),
+                      };
+                      try {
+                        const bc = new BroadcastChannel('tracex_bus');
+                        bc.postMessage(payload);
+                        bc.close();
+                      } catch {}
+                      try {
+                        localStorage.setItem('tracex_event', JSON.stringify(payload));
+                      } catch {}
+                    }
+                  }}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-colors shadow-sm cursor-pointer"
                 >
                   <span>Open in TraceX SRE Console</span>
