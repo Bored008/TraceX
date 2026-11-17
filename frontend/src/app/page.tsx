@@ -52,8 +52,18 @@ export default function DashboardPage() {
     const serviceParam = params.get('service');
     const scenarioParam = params.get('scenario') as ChaosScenario | null;
 
-    if (scenarioParam) {
-      injectFault(scenarioParam);
+    const defaultScenarioForService: Record<string, ChaosScenario> = {
+      'auth-service': 'auth_crash',
+      'postgres-db': 'db_overload',
+      'payment-service': 'network_partition',
+      'inventory-service': 'memory_leak',
+      'cdn': 'cdn_latency',
+    };
+
+    const targetScenario = scenarioParam || (serviceParam ? defaultScenarioForService[serviceParam] : null);
+
+    if (targetScenario) {
+      injectFault(targetScenario);
     }
     if (serviceParam) {
       selectService(serviceParam);

@@ -132,6 +132,7 @@ export function useCart() {
               errorType: data.errorType || 'Service Unavailable',
               userMessage: data.userMessage || 'We were unable to process your order at this time.',
               technicalMessage: data.technicalMessage || 'Connection pool timeout to downstream storage.',
+              scenario: data.failureDetails?.scenario || data.scenario || simulateFault,
             },
           });
 
@@ -197,6 +198,7 @@ export function useCart() {
               errorType: info.type,
               userMessage: 'Your transaction could not be processed due to a temporary system disruption.',
               technicalMessage: info.msg,
+              scenario: simulateFault,
             },
           });
 

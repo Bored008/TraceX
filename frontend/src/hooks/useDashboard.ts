@@ -116,7 +116,10 @@ export function useDashboard() {
       })
       .then((graph) => {
         if (graph && graph.services && graph.services.length > 0) {
-          setState((prev) => ({ ...prev, services: graph.services }));
+          setState((prev) => {
+            if (prev.activeScenarios.length > 0) return prev;
+            return { ...prev, services: graph.services };
+          });
         }
       })
       .catch(() => {
@@ -138,11 +141,39 @@ export function useDashboard() {
     const onMetricsUpdate = (data: { timestamp?: number; services: ServiceInfo[] }) => {
       if (data && Array.isArray(data.services) && data.services.length > 0) {
         setState((prev) => {
+          // If chaos scenarios are active, NEVER auto-recover. Maintain degraded states on all affected services.
+          if (prev.activeScenarios.length > 0) {
+            let activeServices = data.services;
+            for (const sc of prev.activeScenarios) {
+              const f = simulateFault(sc);
+              activeServices = activeServices.map((s) => {
+                const effect = f.affectedServices.get(s.id);
+                if (effect) {
+                  return {
+                    ...s,
+                    status: effect.status,
+                    metrics: {
+                      ...s.metrics,
+                      ...effect.metrics,
+                    },
+                  };
+                }
+                return s;
+              });
+            }
+            return {
+              ...prev,
+              services: activeServices,
+              systemStatus: 'incident',
+            };
+          }
+
           const hasUnhealthyService = data.services.some(
             (s) => s.status === 'degraded' || s.status === 'critical' || s.status === 'down'
           );
 
-          if (!hasUnhealthyService && (prev.systemStatus === 'incident' || prev.rootCauseResult !== null)) {
+          // ONLY auto-recover when there are NO active scenarios AND no unhealthy services
+          if (prev.activeScenarios.length === 0 && !hasUnhealthyService && (prev.systemStatus === 'incident' || prev.rootCauseResult !== null)) {
             const recoveryEvent: TimelineEvent = {
               id: `recovery-${Date.now()}`,
               timestamp: Date.now(),
@@ -468,9 +499,29 @@ export function useDashboard() {
     const interval = setInterval(() => {
       setState((prev) => {
         if (prev.services.length === 0) return prev;
+        let ticked = tickServices(prev.services);
+        if (prev.activeScenarios.length > 0) {
+          for (const sc of prev.activeScenarios) {
+            const f = simulateFault(sc);
+            ticked = ticked.map((s) => {
+              const effect = f.affectedServices.get(s.id);
+              if (effect) {
+                return {
+                  ...s,
+                  status: effect.status,
+                  metrics: {
+                    ...s.metrics,
+                    ...effect.metrics,
+                  },
+                };
+              }
+              return s;
+            });
+          }
+        }
         return {
           ...prev,
-          services: tickServices(prev.services),
+          services: ticked,
         };
       });
     }, 1000);
@@ -542,6 +593,8 @@ export function useDashboard() {
         fault.affectedServices.forEach((effect, serviceId) => {
           const timer = setTimeout(() => {
             setState((current) => {
+              if (!current.activeScenarios.includes(scenario)) return current;
+
               const updatedServices = current.services.map((s) => {
                 if (s.id === serviceId) {
                   return {
@@ -580,6 +633,8 @@ export function useDashboard() {
         const rcaTimer = setTimeout(() => {
           const rcaEvent = fault.timeline.find((e) => e.type === 'rca');
           setState((current) => {
+            if (!current.activeScenarios.includes(scenario)) return current;
+
             const secondaryRoots = current.activeScenarios
               .filter((s) => s !== scenario)
               .map((s) => ({

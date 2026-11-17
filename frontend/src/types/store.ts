@@ -43,5 +43,6 @@ export interface OrderOutcome {
     errorType: string;
     userMessage: string;
     technicalMessage: string;
+    scenario?: string;
   };
 }

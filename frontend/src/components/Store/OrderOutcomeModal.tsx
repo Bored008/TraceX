@@ -168,30 +168,52 @@ export default function OrderOutcomeModal({
                 </p>
 
                 {/* Direct Action Link to TraceX SRE Dashboard */}
-                <Link
-                  href={`/?service=${outcome.failureDetails?.service || 'postgres-db'}`}
-                  onClick={() => {
-                    if (typeof window !== 'undefined') {
-                      const payload = {
-                        type: 'select:service',
-                        serviceId: outcome.failureDetails?.service || 'postgres-db',
-                        timestamp: Date.now(),
-                      };
-                      try {
-                        const bc = new BroadcastChannel('tracex_bus');
-                        bc.postMessage(payload);
-                        bc.close();
-                      } catch {}
-                      try {
-                        localStorage.setItem('tracex_event', JSON.stringify(payload));
-                      } catch {}
-                    }
-                  }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-colors shadow-sm cursor-pointer"
-                >
-                  <span>Open in TraceX SRE Console</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </Link>
+                {(() => {
+                  const targetScenario =
+                    outcome.failureDetails?.scenario ||
+                    (outcome.failureDetails?.service === 'auth-service'
+                      ? 'auth_crash'
+                      : outcome.failureDetails?.service === 'payment-service'
+                      ? 'network_partition'
+                      : outcome.failureDetails?.service === 'inventory-service'
+                      ? 'memory_leak'
+                      : outcome.failureDetails?.service === 'cdn'
+                      ? 'cdn_latency'
+                      : 'db_overload');
+                  return (
+                    <Link
+                      href={`/?service=${outcome.failureDetails?.service || 'postgres-db'}&scenario=${targetScenario}`}
+                      onClick={() => {
+                        if (typeof window !== 'undefined') {
+                          const faultPayload = {
+                            type: 'fault:inject',
+                            scenario: targetScenario,
+                            serviceId: outcome.failureDetails?.service || 'postgres-db',
+                            timestamp: Date.now(),
+                          };
+                          const selectPayload = {
+                            type: 'select:service',
+                            serviceId: outcome.failureDetails?.service || 'postgres-db',
+                            timestamp: Date.now(),
+                          };
+                          try {
+                            const bc = new BroadcastChannel('tracex_bus');
+                            bc.postMessage(faultPayload);
+                            bc.postMessage(selectPayload);
+                            bc.close();
+                          } catch {}
+                          try {
+                            localStorage.setItem('tracex_event', JSON.stringify(faultPayload));
+                          } catch {}
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-colors shadow-sm cursor-pointer"
+                    >
+                      <span>Open in TraceX SRE Console</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Link>
+                  );
+                })()}
               </div>
             </div>
           )}

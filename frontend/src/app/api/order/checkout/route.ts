@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
         userMessage:
           'Your order could not be completed due to a temporary system issue. No funds have been deducted.',
         technicalMessage: faultInfo.technicalMessage,
+        scenario: primaryScenario,
       };
 
       return NextResponse.json(
