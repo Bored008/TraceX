@@ -53,7 +53,7 @@ export default function ControlPanel({
           onClick={onReset}
           disabled={!Boolean(isAnyActive)}
           className={`
-            flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-xs font-semibold transition-all duration-200
+            group flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-xs font-semibold transition-all duration-200
             ${
               isAnyActive
                 ? 'border border-emerald-500 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 shadow-[0_0_15px_rgba(34,197,94,0.3)] cursor-pointer'
@@ -61,7 +61,7 @@ export default function ControlPanel({
             }
           `}
         >
-          <RotateCcw className={`w-3.5 h-3.5 ${isAnyActive ? 'animate-[spin_3s_linear_infinite]' : ''}`} />
+          <RotateCcw className={`w-3.5 h-3.5 transition-transform duration-500 ${isAnyActive ? 'group-hover:-rotate-180' : ''}`} />
           <span>Reset System to Safe Baseline</span>
         </button>
       </div>
@@ -75,7 +75,7 @@ export default function ControlPanel({
               Compound Multi-Crash Mode ({activeCount} Active):
             </span>
             <span className="text-neutral-300 truncate">
-              {currentActiveList.map((s) => s.replace('_', ' ')).join(' + ')}
+              {currentActiveList.map((s) => s.replaceAll('_', ' ')).join(' + ')}
             </span>
           </div>
           <span className="text-[11px] text-neutral-400 hidden sm:inline">
@@ -119,9 +119,9 @@ export default function ControlPanel({
               </div>
 
               <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-neutral-500">
-                <span>Target: {scenario.id.replace('_', ' ')}</span>
+                <span>Target: {scenario.id.replaceAll('_', ' ')}</span>
                 <span className={isScenarioActive ? 'text-red-400 font-bold' : 'text-neutral-400'}>
-                  {isScenarioActive ? 'Harm Active • Click to Remove' : '+ Click to Inject'}
+                  {isScenarioActive ? 'Fault Active • Click to Remove' : '+ Click to Inject'}
                 </span>
               </div>
             </button>

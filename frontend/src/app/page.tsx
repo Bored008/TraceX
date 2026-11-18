@@ -39,6 +39,7 @@ export default function DashboardPage() {
     systemStatus,
     isBackendConnected,
     injectFault,
+    toggleFault,
     resetServices,
     selectService,
   } = useDashboard();
@@ -64,6 +65,9 @@ export default function DashboardPage() {
 
     if (targetScenario) {
       injectFault(targetScenario);
+      try {
+        window.history.replaceState({}, '', window.location.pathname);
+      } catch {}
     }
     if (serviceParam) {
       selectService(serviceParam);
@@ -78,7 +82,7 @@ export default function DashboardPage() {
       {/* Top Header */}
       <Header
         systemStatus={systemStatus}
-        incidentCount={rootCauseResult ? 1 : 0}
+        incidentCount={activeScenarios.length > 0 ? activeScenarios.length : (rootCauseResult ? 1 : 0)}
         isBackendConnected={isBackendConnected}
       />
 
@@ -219,7 +223,7 @@ export default function DashboardPage() {
         {/* Chaos Engineering & Fault Simulator */}
         <section className="rounded-xl border border-white/20 bg-[#16161b] shadow-xl">
           <ControlPanel
-            onInjectFault={injectFault}
+            onInjectFault={toggleFault}
             onReset={resetServices}
             isActive={activeScenarios.length > 0}
             activeScenario={activeScenario}

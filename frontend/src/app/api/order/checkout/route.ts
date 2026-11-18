@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       } catch (e) {
         console.error('[Checkout] Failed to inject fault scenario:', e);
       }
-    } else if (body.autoHeal) {
+    } else if (body.autoHeal === true) {
       resetChaosState();
     }
 

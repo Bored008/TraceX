@@ -73,10 +73,8 @@ h1, h2, h3, h4, h5, h6 {
   overflow: hidden;
 }
 
-/* Green Dotted Lines Following Server Dependency Topology */
+/* Animated Dotted Lines Following Server Dependency Topology */
 .react-flow__edge-path {
-  stroke: #22c55e;
-  stroke-width: 2px;
   stroke-dasharray: 4 4;
   animation: dashdraw 1.2s linear infinite;
 }

@@ -63,7 +63,7 @@ export default function OrderOutcomeModal({
               {isConfirmed ? (
                 <CheckCircle2 className="w-9 h-9 stroke-[2.5]" />
               ) : (
-                <AlertOctagon className="w-9 h-9 animate-bounce" />
+                <AlertOctagon className="w-9 h-9 animate-pulse" />
               )}
             </div>
 

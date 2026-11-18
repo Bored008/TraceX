@@ -83,7 +83,8 @@ export function useCart() {
       const traceId = `tr-${Math.random().toString(36).substring(2, 9)}`;
       const orderId = `TB-${Math.floor(100000 + Math.random() * 900000)}`;
 
-      const shouldAutoHeal = autoHeal ?? (!simulateFault || simulateFault === 'none');
+      // Only auto-heal if the caller explicitly requested autoHeal: true (e.g. from Auto-Heal & Retry button)
+      const shouldAutoHeal = autoHeal === true;
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3500);

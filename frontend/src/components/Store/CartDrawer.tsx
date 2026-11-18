@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { CartItem } from '@/types/store';
-import { X, Plus, Minus, ArrowRight, ShoppingCart, Zap, ShieldCheck } from 'lucide-react';
+import { X, Plus, Minus, ArrowRight, ShoppingCart, Zap, ShieldCheck, Trash2 } from 'lucide-react';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -114,20 +114,29 @@ export default function CartDrawer({
                       </div>
                     </div>
 
-                    {/* Quantity Stepper */}
-                    <div className="flex items-center justify-between bg-[#0c831f] rounded-lg px-2 py-1 text-xs font-bold text-white shadow-xs min-w-[70px]">
+                    {/* Quantity Stepper & Remove */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between bg-[#0c831f] rounded-lg px-2 py-1 text-xs font-bold text-white shadow-xs min-w-[70px]">
+                        <button
+                          onClick={() => onUpdateQuantity(item.id, quantity - 1)}
+                          className="w-4 h-4 flex items-center justify-center hover:bg-black/20 rounded cursor-pointer"
+                        >
+                          <Minus className="w-3 h-3 stroke-[3]" />
+                        </button>
+                        <span className="px-1 font-mono font-extrabold">{quantity}</span>
+                        <button
+                          onClick={() => onUpdateQuantity(item.id, quantity + 1)}
+                          className="w-4 h-4 flex items-center justify-center hover:bg-black/20 rounded cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3 stroke-[3]" />
+                        </button>
+                      </div>
                       <button
-                        onClick={() => onUpdateQuantity(item.id, quantity - 1)}
-                        className="w-4 h-4 flex items-center justify-center hover:bg-black/20 rounded cursor-pointer"
+                        onClick={() => onRemoveItem(item.id)}
+                        className="text-gray-400 hover:text-rose-600 p-1 rounded transition-colors cursor-pointer"
+                        title="Remove item"
                       >
-                        <Minus className="w-3 h-3 stroke-[3]" />
-                      </button>
-                      <span className="px-1 font-mono font-extrabold">{quantity}</span>
-                      <button
-                        onClick={() => onUpdateQuantity(item.id, quantity + 1)}
-                        className="w-4 h-4 flex items-center justify-center hover:bg-black/20 rounded cursor-pointer"
-                      >
-                        <Plus className="w-3 h-3 stroke-[3]" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>

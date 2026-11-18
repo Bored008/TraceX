@@ -13,8 +13,8 @@ const ConfidenceRing: React.FC<ConfidenceRingProps> = ({ value, size = 64 }) => 
   const circumference = radius * 2 * Math.PI;
   const strokeDashoffset = circumference - (value / 100) * circumference;
 
-  // Green for high confidence (>=75%), Red for uncertainty/risk (<75%)
-  const color = value >= 75 ? 'text-emerald-400' : 'text-red-400';
+  // Electric cyan for high confidence (>=75%), Amber for uncertainty (<75%)
+  const color = value >= 75 ? 'text-cyan-400' : 'text-amber-400';
 
   return (
     <div className="relative flex items-center justify-center select-none" style={{ width: size, height: size }}>

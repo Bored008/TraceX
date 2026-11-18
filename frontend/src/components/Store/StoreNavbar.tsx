@@ -73,11 +73,16 @@ export default function StoreNavbar({
           >
             <Activity className="w-4 h-4 text-emerald-600 group-hover:animate-pulse" />
             <span className="hidden lg:inline">TraceX Observability</span>
-            <span
-              className={`w-2 h-2 rounded-full ${
-                systemStatus === 'healthy' ? 'bg-emerald-500 ring-2 ring-emerald-200' : 'bg-red-500 animate-ping'
-              }`}
-            />
+            <span className="relative flex h-2 w-2">
+              {systemStatus !== 'healthy' && (
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+              )}
+              <span
+                className={`relative inline-flex rounded-full h-2 w-2 ${
+                  systemStatus === 'healthy' ? 'bg-emerald-500 ring-2 ring-emerald-200' : 'bg-red-500'
+                }`}
+              />
+            </span>
           </Link>
 
           {/* Signature Blinkit Green Cart Button */}

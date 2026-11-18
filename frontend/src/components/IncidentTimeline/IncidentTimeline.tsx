@@ -58,7 +58,7 @@ export default function IncidentTimeline({ events }: IncidentTimelineProps) {
     >
       <div className="relative border-l border-white/10 ml-2 space-y-4 pb-1 mt-1">
         {events.map((event, index) => {
-          const itemKey = `${event.id || 'evt'}-${index}-${event.timestamp || Date.now()}`;
+          const itemKey = `${event.id || 'evt'}-${index}-${event.timestamp || 0}`;
           const isHarm = event.type === 'anomaly' || event.type === 'rca' || event.type === 'chaos';
 
           return (

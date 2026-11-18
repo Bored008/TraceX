@@ -53,8 +53,10 @@ export async function GET() {
         sendEvent('rca:completed', incidents[0]);
       }
 
-      // Subscribe to real-time events triggered by API actions
+      // Subscribe to real-time events triggered by API actions (chaos:injected, rca:completed, etc.)
       unsubscribe = subscribeEvents((event, data) => {
+        // Avoid sending redundant metrics:update since the periodic interval ticks and streams them below
+        if (event === 'metrics:update') return;
         sendEvent(event, data);
       });
 

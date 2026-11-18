@@ -15,6 +15,7 @@ import {
 } from '@xyflow/react';
 
 import ServiceNode, { type ServiceNodeData } from './ServiceNode';
+import ServiceEdge from './ServiceEdge';
 import { getLayoutedElements } from './graph-layout';
 import { ServiceInfo } from '@/types';
 import { SERVICE_CONFIG, SERVICE_DEPENDENCIES } from '@/lib/constants';
@@ -30,6 +31,10 @@ interface DependencyGraphProps {
 
 const nodeTypes: NodeTypes = {
   service: ServiceNode,
+};
+
+const edgeTypes = {
+  service: ServiceEdge,
 };
 
 export default function DependencyGraph({ 
@@ -136,7 +141,13 @@ export default function DependencyGraph({
         id: `e-${dep.source}-${dep.target}`,
         source: dep.source,
         target: dep.target,
+        type: 'service',
         animated: true,
+        data: {
+          protocol: dep.protocol,
+          avgLatency: dep.avgLatency,
+          status: edgeStatus,
+        },
         style: {
           strokeWidth: isHarm ? 2.5 : 2,
           stroke: isHarm ? '#ef4444' : '#22c55e',
@@ -152,6 +163,7 @@ export default function DependencyGraph({
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         fitViewOptions={{ padding: 0.15 }}
         className="bg-[#0e0e11]"

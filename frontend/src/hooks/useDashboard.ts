@@ -55,6 +55,11 @@ export function useDashboard() {
   const sseConnectedRef = useRef(false);
   const socketConnectedRef = useRef(false);
   const healthOkRef = useRef(false);
+  const clientIdRef = useRef<string>(
+    typeof window !== 'undefined'
+      ? `client-${Math.random().toString(36).substring(2, 9)}`
+      : 'server'
+  );
 
   // Initialize backend connection, SSE, and Socket.IO listeners
   useEffect(() => {
@@ -168,28 +173,12 @@ export function useDashboard() {
             };
           }
 
-          const hasUnhealthyService = data.services.some(
-            (s) => s.status === 'degraded' || s.status === 'critical' || s.status === 'down'
-          );
-
-          // ONLY auto-recover when there are NO active scenarios AND no unhealthy services
-          if (prev.activeScenarios.length === 0 && !hasUnhealthyService && (prev.systemStatus === 'incident' || prev.rootCauseResult !== null)) {
-            const recoveryEvent: TimelineEvent = {
-              id: `recovery-${Date.now()}`,
-              timestamp: Date.now(),
-              type: 'recovery',
-              title: 'System Recovered & Baseline Restored',
-              description: 'All 8 microservices returned to healthy operating baseline. SLA normal.',
-            };
-
+          // Retain incident status if an active RCA or fault is present; never auto-recover on telemetry
+          if (prev.rootCauseResult !== null || prev.systemStatus === 'incident') {
             return {
               ...prev,
               services: data.services,
-              rootCauseResult: null,
-              activeScenario: null,
-              activeScenarios: [],
-              systemStatus: 'healthy',
-              timelineEvents: [...prev.timelineEvents.slice(-40), recoveryEvent],
+              systemStatus: 'incident',
             };
           }
 
@@ -529,63 +518,43 @@ export function useDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Inject or toggle fault
+  // Select a service
+  const selectService = useCallback((serviceId: string | null) => {
+    setState((prev) => ({ ...prev, selectedServiceId: serviceId }));
+  }, []);
+
+  // Inject fault (idempotent - never auto-cancels or toggles off on re-trigger)
   const injectFault = useCallback(
-    (scenario: ChaosScenario) => {
+    (scenario: ChaosScenario, broadcast: boolean = true) => {
       setState((prev) => {
         const isAlreadyActive = prev.activeScenarios.includes(scenario);
 
-        // Always notify REST API endpoints (/api/chaos/stop or /api/chaos/inject)
-        if (isAlreadyActive) {
-          api.stopChaos(scenario).catch((err) => {
-            console.error('Failed to stop chaos via backend:', err);
-          });
-        } else {
-          api.injectChaos(scenario).catch((err) => {
-            console.error('Failed to inject chaos via backend:', err);
-          });
+        // Always notify REST API endpoint
+        api.injectChaos(scenario).catch((err) => {
+          console.error('Failed to inject chaos via backend:', err);
+        });
+
+        // Broadcast to other open browser tabs/windows
+        if (broadcast && typeof window !== 'undefined') {
+          const clientId = clientIdRef.current;
+          try {
+            const bc = new BroadcastChannel('tracex_bus');
+            bc.postMessage({ type: 'fault:inject', scenario, clientId, timestamp: Date.now() });
+            bc.close();
+          } catch {}
+          try {
+            localStorage.setItem(
+              'tracex_event',
+              JSON.stringify({ type: 'fault:inject', scenario, clientId, timestamp: Date.now() })
+            );
+          } catch {}
         }
 
-        // Toggle off if already active
-        if (isAlreadyActive) {
-          const nextList = prev.activeScenarios.filter((s) => s !== scenario);
-          if (nextList.length === 0) {
-            faultTimersRef.current.forEach(clearTimeout);
-            faultTimersRef.current = [];
-            return {
-              ...prev,
-              services: generateInitialServices(),
-              rootCauseResult: null,
-              activeScenario: null,
-              activeScenarios: [],
-              systemStatus: 'healthy',
-              timelineEvents: [
-                ...prev.timelineEvents,
-                {
-                  id: `chaos-stop-${Date.now()}`,
-                  timestamp: Date.now(),
-                  type: 'recovery',
-                  title: 'All Faults Cleared',
-                  description: 'Local services restored to safe baseline',
-                },
-              ],
-            };
-          }
-          const remainingFault = simulateFault(nextList[nextList.length - 1]);
-          return {
-            ...prev,
-            activeScenarios: nextList,
-            activeScenario: nextList[nextList.length - 1],
-            rootCauseResult: remainingFault.rcaResult,
-          };
-        }
-
-        // Activate new chaos scenario
-        const nextList = [...prev.activeScenarios, scenario];
+        const nextList = isAlreadyActive ? prev.activeScenarios : [...prev.activeScenarios, scenario];
         const fault = simulateFault(scenario);
         const rootCauseId = fault.rcaResult.rootCause.serviceId;
 
-        // Clear existing timers
+        // Clear existing cascading timers to prevent stale timer interference
         faultTimersRef.current.forEach(clearTimeout);
         faultTimersRef.current = [];
 
@@ -653,6 +622,7 @@ export function useDashboard() {
             return {
               ...current,
               rootCauseResult: combinedRca,
+              systemStatus: 'incident',
               timelineEvents: rcaEvent
                 ? [...current.timelineEvents, { ...rcaEvent, timestamp: Date.now() }]
                 : current.timelineEvents,
@@ -663,15 +633,6 @@ export function useDashboard() {
         faultTimersRef.current.push(rcaTimer);
 
         const chaosEvent = fault.timeline[0];
-
-        // Broadcast to other open browser tabs/windows (e.g. between /store and /)
-        if (typeof window !== 'undefined') {
-          try {
-            const bc = new BroadcastChannel('tracex_bus');
-            bc.postMessage({ type: 'fault:inject', scenario, timestamp: Date.now() });
-            bc.close();
-          } catch {}
-        }
 
         // Apply root cause failure immediately to the target node
         const targetEffect = fault.affectedServices.get(rootCauseId);
@@ -696,8 +657,70 @@ export function useDashboard() {
     []
   );
 
+  // Explicitly remove or toggle off a scenario (only when user clicks card to toggle off)
+  const removeFault = useCallback(
+    (scenario: ChaosScenario) => {
+      setState((prev) => {
+        if (!prev.activeScenarios.includes(scenario)) return prev;
+
+        api.stopChaos(scenario).catch((err) => {
+          console.error('Failed to stop chaos via backend:', err);
+        });
+
+        const nextList = prev.activeScenarios.filter((s) => s !== scenario);
+        if (nextList.length === 0) {
+          faultTimersRef.current.forEach(clearTimeout);
+          faultTimersRef.current = [];
+          return {
+            ...prev,
+            services: generateInitialServices(),
+            rootCauseResult: null,
+            activeScenario: null,
+            activeScenarios: [],
+            systemStatus: 'healthy',
+            timelineEvents: [
+              ...prev.timelineEvents,
+              {
+                id: `chaos-stop-${Date.now()}`,
+                timestamp: Date.now(),
+                type: 'recovery',
+                title: 'All Faults Cleared',
+                description: 'Local services restored to safe baseline',
+              },
+            ],
+          };
+        }
+
+        const remainingFault = simulateFault(nextList[nextList.length - 1]);
+        return {
+          ...prev,
+          activeScenarios: nextList,
+          activeScenario: nextList[nextList.length - 1],
+          rootCauseResult: remainingFault.rcaResult,
+          systemStatus: 'incident',
+        };
+      });
+    },
+    []
+  );
+
+  const toggleFault = useCallback(
+    (scenario: ChaosScenario) => {
+      setState((prev) => {
+        if (prev.activeScenarios.includes(scenario)) {
+          removeFault(scenario);
+          return prev;
+        } else {
+          injectFault(scenario);
+          return prev;
+        }
+      });
+    },
+    [injectFault, removeFault]
+  );
+
   // Reset all services
-  const resetServices = useCallback(() => {
+  const resetServices = useCallback((broadcast: boolean = true) => {
     faultTimersRef.current.forEach(clearTimeout);
     faultTimersRef.current = [];
 
@@ -707,11 +730,18 @@ export function useDashboard() {
     });
 
     // Broadcast reset to other tabs
-    if (typeof window !== 'undefined') {
+    if (broadcast && typeof window !== 'undefined') {
+      const clientId = clientIdRef.current;
       try {
         const bc = new BroadcastChannel('tracex_bus');
-        bc.postMessage({ type: 'fault:reset', timestamp: Date.now() });
+        bc.postMessage({ type: 'fault:reset', clientId, timestamp: Date.now() });
         bc.close();
+      } catch {}
+      try {
+        localStorage.setItem(
+          'tracex_event',
+          JSON.stringify({ type: 'fault:reset', clientId, timestamp: Date.now() })
+        );
       } catch {}
     }
 
@@ -743,10 +773,14 @@ export function useDashboard() {
 
     const handleCrossTabPayload = (payload: any) => {
       if (!payload || !payload.type) return;
+      if (payload.clientId && payload.clientId === clientIdRef.current) {
+        return; // Ignore self-broadcast echoes!
+      }
+
       if (payload.type === 'fault:inject' && payload.scenario) {
-        injectFault(payload.scenario as ChaosScenario);
+        injectFault(payload.scenario as ChaosScenario, false);
       } else if (payload.type === 'fault:reset') {
-        resetServices();
+        resetServices(false);
       } else if (payload.type === 'select:service' && payload.serviceId) {
         selectService(payload.serviceId);
       }
@@ -772,12 +806,7 @@ export function useDashboard() {
       if (bc) bc.close();
       window.removeEventListener('storage', onStorage);
     };
-  }, [injectFault, resetServices]);
-
-  // Select a service
-  const selectService = useCallback((serviceId: string | null) => {
-    setState((prev) => ({ ...prev, selectedServiceId: serviceId }));
-  }, []);
+  }, [injectFault, resetServices, selectService]);
 
   const selectedService =
     state.services.find((s) => s.id === state.selectedServiceId) || null;
@@ -793,6 +822,8 @@ export function useDashboard() {
     activeScenarios: state.activeScenarios,
     systemStatus: state.systemStatus,
     injectFault,
+    toggleFault,
+    removeFault,
     resetServices,
     resetSystem: resetServices,
     selectService,

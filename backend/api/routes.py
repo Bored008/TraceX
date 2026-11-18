@@ -231,7 +231,7 @@ async def checkout_order(req: OrderCheckoutRequest, request: Request):
             await broadcast_chaos_injected(req.simulateFaultScenario, fault.target_service)
         except Exception:
             pass
-    elif req.autoHeal:
+    elif req.autoHeal is True:
         # User requested normal healthy checkout or auto-remediation: reset active faults
         app_state.digital_twin.reset()
         app_state.recent_anomalies.clear()

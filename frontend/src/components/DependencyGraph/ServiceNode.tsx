@@ -31,8 +31,10 @@ export default function ServiceNode({ data }: { data: ServiceNodeData }) {
   let boxBorder = 'border-white/25 hover:border-white/60 bg-[#1c1c23] shadow-lg';
   if (isRootCause) {
     boxBorder = 'border-red-500 ring-2 ring-red-500/40 bg-[#281316] shadow-[0_0_24px_rgba(239,68,68,0.3)]';
-  } else if (isAffected || isHarm) {
+  } else if (status === 'critical' || status === 'down') {
     boxBorder = 'border-red-500/60 bg-[#201215] shadow-[0_0_15px_rgba(239,68,68,0.15)]';
+  } else if (status === 'degraded' || isAffected) {
+    boxBorder = 'border-amber-500/50 bg-[#211b14] shadow-[0_0_15px_rgba(245,158,11,0.15)]';
   }
 
   const selectionRing = isSelected
@@ -73,15 +75,23 @@ export default function ServiceNode({ data }: { data: ServiceNodeData }) {
           </div>
         </div>
 
-        {/* Status Indicator: Green (Safe) vs Red (Harm) */}
+        {/* Status Indicator: Green (Healthy) vs Amber (Degraded) vs Red (Critical/Root) */}
         <div className="flex-shrink-0">
           {isRootCause ? (
             <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/40">
               Root
             </span>
-          ) : isHarm ? (
+          ) : status === 'critical' || status === 'down' ? (
             <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/30">
-              Harm
+              Critical
+            </span>
+          ) : status === 'degraded' ? (
+            <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">
+              Degraded
+            </span>
+          ) : isAffected ? (
+            <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30">
+              Affected
             </span>
           ) : (
             <div className="flex items-center gap-1 text-[10px] font-mono text-emerald-400 font-semibold">
